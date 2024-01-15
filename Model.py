@@ -1,21 +1,36 @@
 from torch import nn
 import torch.nn.functional as F
 
-from torch_geometric.nn import GCNConv
+from torch_geometric.nn import GINConv
 from torch_geometric.nn import global_mean_pool
 from transformers import AutoModel
 
 
 class GraphEncoder(nn.Module):
-    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels):
+    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels, n_gins=5):
         super(GraphEncoder, self).__init__()
         self.nhid = nhid
         self.nout = nout
         self.relu = nn.ReLU()
         self.ln = nn.LayerNorm((nout))
-        self.conv1 = GCNConv(num_node_features, graph_hidden_channels)
-        self.conv2 = GCNConv(graph_hidden_channels, graph_hidden_channels)
-        self.conv3 = GCNConv(graph_hidden_channels, graph_hidden_channels)
+        self.gins = [
+            GINConv(
+                nn.Sequential(
+                    nn.Linear(num_node_features, graph_hidden_channels),
+                    nn.BatchNorm1d(graph_hidden_channels), nn.ReLU(),
+                    nn.Linear(graph_hidden_channels, graph_hidden_channels), nn.ReLU()
+                ),
+                train_eps=True)
+        ]
+        for _ in range(n_gins-1):
+            self.gins.append(
+                GINConv(
+                    nn.Sequential(
+                        nn.Linear(graph_hidden_channels, 2*graph_hidden_channels),
+                        nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(),
+                        nn.Linear(2*graph_hidden_channels, graph_hidden_channels), nn.ReLU()
+                    ),
+                    train_eps=True))
         self.mol_hidden1 = nn.Linear(graph_hidden_channels, nhid)
         self.mol_hidden2 = nn.Linear(nhid, nout)
 
@@ -23,11 +38,8 @@ class GraphEncoder(nn.Module):
         x = graph_batch.x
         edge_index = graph_batch.edge_index
         batch = graph_batch.batch
-        x = self.conv1(x, edge_index)
-        x = x.relu()
-        x = self.conv2(x, edge_index)
-        x = x.relu()
-        x = self.conv3(x, edge_index)
+        for gin in self.gins:
+            x = gin(x, edge_index)
         x = global_mean_pool(x, batch)
         x = self.mol_hidden1(x).relu()
         x = self.mol_hidden2(x)
