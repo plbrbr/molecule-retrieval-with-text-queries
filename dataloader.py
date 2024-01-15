@@ -58,8 +58,7 @@ class GraphTextDataset(Dataset):
             x.append(self.gt['UNK'])
         return torch.LongTensor(edge_index).T, torch.FloatTensor(x)
 
-    def process(self):
-        i = 0        
+    def process(self):      
         for raw_path in self.raw_paths:
             cid = int(raw_path.split('/')[-1][:-6])
             text_input = self.tokenizer([self.description[1][cid]],
@@ -72,7 +71,6 @@ class GraphTextDataset(Dataset):
             data = Data(x=x, edge_index=edge_index, input_ids=text_input['input_ids'], attention_mask=text_input['attention_mask'])
 
             torch.save(data, osp.join(self.processed_dir, 'data_{}.pt'.format(cid)))
-            i += 1
 
     def len(self):
         return len(self.processed_file_names)
@@ -137,13 +135,11 @@ class GraphDataset(Dataset):
         return torch.LongTensor(edge_index).T, torch.FloatTensor(x)
 
     def process(self):
-        i = 0        
         for raw_path in self.raw_paths:
             cid = int(raw_path.split('/')[-1][:-6])
             edge_index, x = self.process_graph(raw_path)
             data = Data(x=x, edge_index=edge_index)
             torch.save(data, osp.join(self.processed_dir, 'data_{}.pt'.format(cid)))
-            i += 1
 
     def len(self):
         return len(self.processed_file_names)
