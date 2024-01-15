@@ -16,11 +16,7 @@ class GraphTextDataset(Dataset):
         self.description = self.description.set_index(0).to_dict()
         self.cids = list(self.description[1].keys())
         
-        self.idx_to_cid = {}
-        i = 0
-        for cid in self.cids:
-            self.idx_to_cid[i] = cid
-            i += 1
+        self.idx_to_cid = {idx: cid for idx, cid in enumerate(self.cids)}
         super(GraphTextDataset, self).__init__(root, transform, pre_transform)
 
     @property
@@ -98,11 +94,7 @@ class GraphDataset(Dataset):
         self.description = pd.read_csv(os.path.join(self.root, split+'.txt'), sep='\t', header=None)
         self.cids = self.description[0].tolist()
         
-        self.idx_to_cid = {}
-        i = 0
-        for cid in self.cids:
-            self.idx_to_cid[i] = cid
-            i += 1
+        self.idx_to_cid = {idx: cid for idx, cid in enumerate(self.cids)}
         super(GraphDataset, self).__init__(root, transform, pre_transform)
 
     @property

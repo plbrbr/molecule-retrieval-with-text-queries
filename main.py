@@ -2,19 +2,14 @@ from dataloader import GraphTextDataset, GraphDataset, TextDataset
 from torch_geometric.data import DataLoader
 from torch.utils.data import DataLoader as TorchDataLoader
 from Model import Model
+from sklearn.metrics.pairwise import cosine_similarity
+from utils import prepare_submission, contrastive_loss
 import numpy as np
 from transformers import AutoTokenizer
 import torch
 from torch import optim
 import time
 import os
-import pandas as pd
-
-CE = torch.nn.CrossEntropyLoss()
-def contrastive_loss(v1, v2):
-  logits = torch.matmul(v1,torch.transpose(v2, 0, 1))
-  labels = torch.arange(logits.shape[0], device=v1.device)
-  return CE(logits, labels) + CE(torch.transpose(logits, 0, 1), labels)
 
 model_name = 'distilbert-base-uncased'
 tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -31,12 +26,21 @@ learning_rate = 2e-5
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-model = Model(model_name=model_name, num_node_features=300, nout=768, nhid=300, graph_hidden_channels=300) # nout = bert model hidden dim
+model = Model(
+    model_name=model_name, 
+    num_node_features=300, 
+    nout=768, 
+    nhid=300, 
+    graph_hidden_channels=300
+) # nout = bert model hidden dim
 model.to(device)
 
-optimizer = optim.AdamW(model.parameters(), lr=learning_rate,
-                                betas=(0.9, 0.999),
-                                weight_decay=0.01)
+optimizer = optim.AdamW(
+    model.parameters(), 
+    lr=learning_rate,
+    betas=(0.9, 0.999),
+    weight_decay=0.01
+)
 
 epoch = 0
 loss = 0
@@ -56,9 +60,11 @@ for i in range(nb_epochs):
         batch.pop('attention_mask')
         graph_batch = batch
         
-        x_graph, x_text = model(graph_batch.to(device), 
-                                input_ids.to(device), 
-                                attention_mask.to(device))
+        x_graph, x_text = model(
+            graph_batch.to(device), 
+            input_ids.to(device), 
+            attention_mask.to(device)
+        )
         current_loss = contrastive_loss(x_graph, x_text)   
         optimizer.zero_grad()
         current_loss.backward()
@@ -80,22 +86,24 @@ for i in range(nb_epochs):
         attention_mask = batch.attention_mask
         batch.pop('attention_mask')
         graph_batch = batch
-        x_graph, x_text = model(graph_batch.to(device), 
-                                input_ids.to(device), 
-                                attention_mask.to(device))
+        x_graph, x_text = model(
+            graph_batch.to(device), 
+            input_ids.to(device), 
+            attention_mask.to(device)
+        )
         current_loss = contrastive_loss(x_graph, x_text)   
         val_loss += current_loss.item()
     best_validation_loss = min(best_validation_loss, val_loss)
-    print('-----EPOCH'+str(i+1)+'----- done.  Validation loss: ', str(val_loss/len(val_loader)) )
+    print('-----EPOCH'+str(i+1)+'----- done.  Validation loss: ', str(val_loss/len(val_loader)))
     if best_validation_loss==val_loss:
         print('validation loss improoved saving checkpoint...')
         save_path = os.path.join('./', 'model'+str(i)+'.pt')
         torch.save({
-        'epoch': i,
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-        'validation_accuracy': val_loss,
-        'loss': loss,
+            'epoch': i,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'validation_accuracy': val_loss,
+            'loss': loss,
         }, save_path)
         print('checkpoint saved to: {}'.format(save_path))
 
@@ -127,12 +135,5 @@ for batch in test_text_loader:
                              attention_mask=batch['attention_mask'].to(device)):
         text_embeddings.append(output.tolist())
 
-
-from sklearn.metrics.pairwise import cosine_similarity
-
 similarity = cosine_similarity(text_embeddings, graph_embeddings)
-
-solution = pd.DataFrame(similarity)
-solution['ID'] = solution.index
-solution = solution[['ID'] + [col for col in solution.columns if col!='ID']]
-solution.to_csv('submission.csv', index=False)
+prepare_submission(similarity, "submissions/submission.csv")
