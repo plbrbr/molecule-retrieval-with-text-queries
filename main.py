@@ -18,8 +18,9 @@ val_dataset = GraphTextDataset(root='./data/', gt=gt, split='val', tokenizer=tok
 train_dataset = GraphTextDataset(root='./data/', gt=gt, split='train', tokenizer=tokenizer)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device)
 
-nb_epochs = 5
+nb_epochs = 10
 batch_size = 64
 learning_rate = 2e-5
 
