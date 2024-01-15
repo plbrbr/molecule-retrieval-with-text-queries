@@ -13,15 +13,15 @@ class GraphEncoder(nn.Module):
         self.nout = nout
         self.relu = nn.ReLU()
         self.ln = nn.LayerNorm((nout))
-        self.gins = [
+        self.gins = nn.ModuleList()
+        self.gins.append(
             GINConv(
                 nn.Sequential(
                     nn.Linear(num_node_features, graph_hidden_channels),
                     nn.BatchNorm1d(graph_hidden_channels), nn.ReLU(),
                     nn.Linear(graph_hidden_channels, graph_hidden_channels), nn.ReLU()
-                ),
-                train_eps=True)
-        ]
+                ), train_eps=True)
+        )
         for _ in range(n_gins-1):
             self.gins.append(
                 GINConv(
@@ -29,8 +29,7 @@ class GraphEncoder(nn.Module):
                         nn.Linear(graph_hidden_channels, 2*graph_hidden_channels),
                         nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(),
                         nn.Linear(2*graph_hidden_channels, graph_hidden_channels), nn.ReLU()
-                    ),
-                    train_eps=True))
+                    ), train_eps=True)) 
         self.mol_hidden1 = nn.Linear(graph_hidden_channels, nhid)
         self.mol_hidden2 = nn.Linear(nhid, nout)
 
