@@ -1,3 +1,6 @@
+git config --global user.email ""
+git config --global user.name ""
+
 export KAGGLE_USERNAME=
 export KAGGLE_KEY=
 kaggle competitions submit altegrad-2023-data-challenge -f submissions/submission.csv
