@@ -3,3 +3,5 @@ torch_geometric
 numpy
 transformers
 scikit-learn
+pandas
+kaggle

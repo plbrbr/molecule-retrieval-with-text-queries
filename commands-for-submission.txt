@@ -1,0 +1,3 @@
+export KAGGLE_USERNAME=
+export KAGGLE_KEY=
+kaggle competitions submit altegrad-2023-data-challenge -f submissions/submission.csv
