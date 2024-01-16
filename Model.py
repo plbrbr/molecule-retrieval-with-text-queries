@@ -59,7 +59,7 @@ class GraphEncoder(nn.Module):
         for gin in self.gins:
             x = gin(x, edge_index)
         x = global_mean_pool(x, batch)
-        x = nn.LeakyReLU(self.mol_hidden1(x))
+        x = self.mol_hidden1(x).relu()
         x = self.dropout1(x)
         x = self.mol_hidden2(x)
         return x
