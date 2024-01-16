@@ -44,7 +44,7 @@ class GraphEncoder(nn.Module):
         self.gins.append(
             GINConv(
                 nn.Sequential(
-                    nn.Linear(num_node_features, 2*graph_hidden_channels),
+                    nn.Linear(graph_hidden_channels, 2*graph_hidden_channels),
                     nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(),
                     nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels),
                     nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(),
