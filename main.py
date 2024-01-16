@@ -17,9 +17,9 @@ gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
 val_dataset = GraphTextDataset(root='./data/', gt=gt, split='val', tokenizer=tokenizer)
 train_dataset = GraphTextDataset(root='./data/', gt=gt, split='train', tokenizer=tokenizer)
 
-device = torch.device("cuda:0")
+device = torch.device("cuda")
 
-nb_epochs = 10
+nb_epochs = 30
 batch_size = 32
 learning_rate = 2e-5
 
@@ -30,7 +30,7 @@ model = Model(
     model_name=model_name, 
     num_node_features=300, 
     nout=768, 
-    nhid=512, 
+    nhid=256, 
     graph_hidden_channels=256
 ).to(device) # nout = bert model hidden dim
 
@@ -96,7 +96,7 @@ for i in range(nb_epochs):
     print('-----EPOCH'+str(i+1)+'----- done.  Validation loss: ', str(val_loss/len(val_loader)))
     if best_validation_loss==val_loss:
         print('validation loss improoved saving checkpoint...')
-        save_path = os.path.join('./', 'model'+str(i)+'.pt')
+        save_path = os.path.join('./', 'model.pt')
         torch.save({
             'epoch': i,
             'model_state_dict': model.state_dict(),
