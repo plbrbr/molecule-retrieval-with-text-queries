@@ -30,7 +30,7 @@ model = Model(
     model_name=model_name, 
     num_node_features=300, 
     nout=768, 
-    nhid=256, 
+    nhid=512, 
     graph_hidden_channels=256
 ).to(device) # nout = bert model hidden dim
 
