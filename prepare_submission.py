@@ -17,9 +17,9 @@ gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
 val_dataset = GraphTextDataset(root='./data/', gt=gt, split='val', tokenizer=tokenizer)
 train_dataset = GraphTextDataset(root='./data/', gt=gt, split='train', tokenizer=tokenizer)
 
-device = torch.device("cuda:0")
+device = torch.device("cuda")
 
-nb_epochs = 10
+nb_epochs = 30
 batch_size = 32
 learning_rate = 2e-5
 
@@ -41,15 +41,7 @@ optimizer = optim.AdamW(
     weight_decay=0.01
 )
 
-epoch = 0
-loss = 0
-losses = []
-count_iter = 0
-time1 = time.time()
-printEvery = 50
-best_validation_loss = 1000000
-
-save_path = os.path.join('./', 'model9.pt')
+save_path = os.path.join('./', 'model.pt')
 
 print('loading best model...')
 checkpoint = torch.load(save_path)
