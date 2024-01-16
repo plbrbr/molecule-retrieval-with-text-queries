@@ -7,7 +7,7 @@ from transformers import AutoModel
 
 
 class GraphEncoder(nn.Module):
-    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels, n_gins=7, dropout_rate=0.2):
+    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels, n_gins=5, dropout_rate=0.1):
         super(GraphEncoder, self).__init__()
         self.nhid = nhid
         self.nout = nout
