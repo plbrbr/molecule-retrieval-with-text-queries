@@ -1,8 +1,3 @@
-sudo apt install -y tmux
-
-git clone git@github.com:paulbarbier/molecule-retrieval-with-text-queries.git
-cd molecule-retrieval-with-text-queries
-
 conda create -n ml python=3.9
 conda activate ml
 pip install -r requirements.txt
