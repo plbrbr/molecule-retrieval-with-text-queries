@@ -1,0 +1,11 @@
+## change source_code files:
+kaggle datasets version -p Kaggle_dataset -m "<Commit message>"
+
+## push and run script:
+kaggle kernels push -p Kaggle_kernel
+
+## get outputs of a kernel:
+kaggle kernels output alexlutt/kaggle-script -p output
+
+## submit:
+kaggle competitions submit altegrad-2023-data-challenge -f output/submission.csv

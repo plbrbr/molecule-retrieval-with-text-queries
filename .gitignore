@@ -1,6 +1,10 @@
 # Project specific
 data
 submission.csv
+Kaggle_dataset
+Kaggle_kernel
+myvenv
+output
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
