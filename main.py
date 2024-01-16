@@ -78,7 +78,8 @@ for i in range(nb_epochs):
             print("Iteration: {0}, Time: {1:.4f} s, training loss: {2:.4f}".format(count_iter,
                                                                         time2 - time1, loss/printEvery))
             losses.append(loss)
-            loss = 0 
+            loss = 0
+        break
     model.eval()
     val_accuracy = 0  
     val_loss = 0
@@ -94,9 +95,9 @@ for i in range(nb_epochs):
             attention_mask.to(device)
         )
         # compute the val accuracy
-        y_score = F.cosine_similarity(x_graph, x_text, dim=0)
-        y_true = F.one_hot(torch.arange(batch_size, device=x_graph.device), num_classes=batch_size)
-        current_accuracy = label_ranking_average_precision_score(y_true, y_score)
+        y_score = F.cosine_similarity(x_graph[:, None, ...], x_text[None, :, ...], dim=2)
+        y_true = F.one_hot(torch.arange(x_graph.shape[0], device=x_graph.device), num_classes=x_graph.shape[0])
+        current_accuracy = label_ranking_average_precision_score(y_true.detach().cpu(), y_score.detach().cpu())
         val_accuracy += current_accuracy.item()
 
         current_loss = contrastive_loss(x_graph, x_text)   
