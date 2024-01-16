@@ -81,7 +81,7 @@ for i in range(nb_epochs):
             loss = 0
 
     model.eval()
-    val_accuracy = 0  
+    graph_embeddings, text_embeddings = [], []
     val_loss = 0
     for batch in val_loader:
         input_ids = batch.input_ids
@@ -95,6 +95,8 @@ for i in range(nb_epochs):
             attention_mask.to(device)
         )
         # compute the val accuracy
+        graph_embeddings.append(x_graph.tolist())
+        text_embeddings.append(x_text.tolist())
         y_score = F.cosine_similarity(x_graph[:, None, ...], x_text[None, :, ...], dim=2)
         y_true = F.one_hot(torch.arange(x_graph.shape[0], device=x_graph.device), num_classes=x_graph.shape[0])
         current_accuracy = label_ranking_average_precision_score(y_true.detach().cpu(), y_score.detach().cpu())
@@ -102,8 +104,11 @@ for i in range(nb_epochs):
 
         current_loss = contrastive_loss(x_graph, x_text)   
         val_loss += current_loss.item()
+    similarity = cosine_similarity(text_embeddings, graph_embeddings)
+    y_true = np.eye(similarity.shape[0])
+    val_accuracy = label_ranking_average_precision_score(y_true, similarity)
     best_validation_loss = min(best_validation_loss, val_loss)
-    print('-----EPOCH'+str(i+1)+'----- done.  Validation loss: ', str(val_loss/len(val_loader)), "Accuracy: ", str(val_accuracy/len(val_loader)))
+    print('-----EPOCH'+str(i+1)+'----- done.  Validation loss: ', str(val_loss/len(val_loader)), "Accuracy: ", str(val_accuracy))
     if best_validation_loss==val_loss:
         print('validation loss improoved saving checkpoint...')
         save_path = os.path.join('./', 'model.pt')
