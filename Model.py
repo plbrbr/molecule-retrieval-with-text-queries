@@ -7,10 +7,11 @@ from transformers import AutoModel
 
 
 class GraphEncoder(nn.Module):
-    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels, n_gins=7):
+    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels, n_gins=7, dropout_rate=0.2):
         super(GraphEncoder, self).__init__()
         self.nhid = nhid
         self.nout = nout
+        self.dropout_rate = dropout_rate
         self.relu = nn.ReLU()
         self.ln = nn.LayerNorm((nout))
         self.gins = nn.ModuleList()
@@ -18,11 +19,11 @@ class GraphEncoder(nn.Module):
             GINConv(
                 nn.Sequential(
                     nn.Linear(num_node_features, 2*graph_hidden_channels),
-                    nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(),
+                    nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(dropout_rate),
                     nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels),
-                    nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(),
+                    nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(dropout_rate),
                     nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels),
-                    nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(),
+                    nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(dropout_rate),
                     nn.Linear(2*graph_hidden_channels, graph_hidden_channels), nn.ReLU(),
                 ), train_eps=True)
         )
@@ -31,11 +32,11 @@ class GraphEncoder(nn.Module):
                 GINConv(
                     nn.Sequential(
                         nn.Linear(graph_hidden_channels, 2*graph_hidden_channels),
-                        nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(),
+                        nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(dropout_rate),
                         nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels),
-                        nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(),
+                        nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(dropout_rate),
                         nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels),
-                        nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(),
+                        nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(dropout_rate),
                         nn.Linear(2*graph_hidden_channels, graph_hidden_channels), nn.ReLU(),
                     ), train_eps=True)
             )
@@ -43,17 +44,17 @@ class GraphEncoder(nn.Module):
             GINConv(
                 nn.Sequential(
                     nn.Linear(graph_hidden_channels, 2*graph_hidden_channels),
-                    nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(),
+                    nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(dropout_rate),
                     nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels),
-                    nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(),
+                    nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(dropout_rate),
                     nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels),
-                    nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(),
+                    nn.BatchNorm1d(2*graph_hidden_channels), nn.ReLU(), nn.Dropout(dropout_rate),
                     nn.Linear(2*graph_hidden_channels, graph_hidden_channels), nn.ReLU()
                 ), train_eps=True)
         )
         self.mol_hidden1 = nn.Linear(graph_hidden_channels, nhid)
         self.mol_hidden2 = nn.Linear(nhid, nout)
-        self.dropout1 = nn.Dropout()
+        self.dropout1 = nn.Dropout(dropout_rate)
 
     def forward(self, graph_batch):
         x = graph_batch.x
