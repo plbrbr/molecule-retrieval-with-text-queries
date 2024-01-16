@@ -3,10 +3,12 @@ from torch_geometric.data import DataLoader
 from torch.utils.data import DataLoader as TorchDataLoader
 from Model import Model
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics import label_ranking_average_precision_score 
 from utils import prepare_submission, contrastive_loss
 import numpy as np
 from transformers import AutoTokenizer
 import torch
+import torch.nn.functional as F
 from torch import optim
 import time
 import os
@@ -77,8 +79,9 @@ for i in range(nb_epochs):
                                                                         time2 - time1, loss/printEvery))
             losses.append(loss)
             loss = 0 
-    model.eval()       
-    val_loss = 0        
+    model.eval()
+    val_accuracy = 0  
+    val_loss = 0
     for batch in val_loader:
         input_ids = batch.input_ids
         batch.pop('input_ids')
@@ -90,10 +93,16 @@ for i in range(nb_epochs):
             input_ids.to(device), 
             attention_mask.to(device)
         )
+        # compute the val accuracy
+        y_score = F.cosine_similarity(x_graph, x_text, dim=0)
+        y_true = F.one_hot(torch.arange(batch_size, device=x_graph.device), num_classes=batch_size)
+        current_accuracy = label_ranking_average_precision_score(y_true, y_score)
+        val_accuracy += current_accuracy.item()
+
         current_loss = contrastive_loss(x_graph, x_text)   
         val_loss += current_loss.item()
     best_validation_loss = min(best_validation_loss, val_loss)
-    print('-----EPOCH'+str(i+1)+'----- done.  Validation loss: ', str(val_loss/len(val_loader)))
+    print('-----EPOCH'+str(i+1)+'----- done.  Validation loss: ', str(val_loss/len(val_loader)), "Accuracy: ", str(val_accuracy/len(val_loader)))
     if best_validation_loss==val_loss:
         print('validation loss improoved saving checkpoint...')
         save_path = os.path.join('./', 'model.pt')
@@ -101,7 +110,8 @@ for i in range(nb_epochs):
             'epoch': i,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
-            'validation_accuracy': val_loss,
+            'validation_loss': val_loss,
+            'validation_accuracy': val_accuracy,
             'loss': loss,
         }, save_path)
         print('checkpoint saved to: {}'.format(save_path))
