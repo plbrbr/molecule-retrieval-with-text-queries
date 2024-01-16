@@ -79,7 +79,7 @@ for i in range(nb_epochs):
                                                                         time2 - time1, loss/printEvery))
             losses.append(loss)
             loss = 0
-        break
+
     model.eval()
     val_accuracy = 0  
     val_loss = 0
