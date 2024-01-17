@@ -107,7 +107,7 @@ for i in range(nb_epochs):
     val_accuracy = label_ranking_average_precision_score(y_true, similarity)
     best_validation_accuracy = min(best_validation_accuracy, val_accuracy)
     print(f"-----EPOCH{i+1}----- done.  Validation loss: {val_loss/len(val_loader):.3f}, Score: {val_accuracy:.3f}")
-    if best_validation_loss==val_loss:
+    if best_validation_accuracy==val_accuracy:
         print('validation score improved saving checkpoint...')
         save_path = os.path.join('./', 'model.pt')
         torch.save({
