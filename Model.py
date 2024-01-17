@@ -24,7 +24,7 @@ class GraphEncoder(nn.Module):
                     nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels),
                     nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
                     nn.Linear(2*graph_hidden_channels, graph_hidden_channels),
-                    nn.BatchNorm1d(graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
+                    nn.LeakyReLU(), nn.Dropout(dropout_rate),
                 ), train_eps=True)
         )
         for _ in range(n_gins-2):
@@ -36,7 +36,7 @@ class GraphEncoder(nn.Module):
                         nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels),
                         nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
                         nn.Linear(2*graph_hidden_channels, graph_hidden_channels),
-                        nn.BatchNorm1d(graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
+                        nn.LeakyReLU(), nn.Dropout(dropout_rate),
                     ), train_eps=True)
             )
         self.gins.append(
@@ -46,7 +46,8 @@ class GraphEncoder(nn.Module):
                     nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
                     nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels),
                     nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
-                    nn.Linear(2*graph_hidden_channels, graph_hidden_channels), nn.LeakyReLU()
+                    nn.Linear(2*graph_hidden_channels, graph_hidden_channels), 
+                    nn.LeakyReLU(), nn.Dropout(dropout_rate),
                 ), train_eps=True)
         )
         self.mol_hidden1 = nn.Linear(graph_hidden_channels, nhid)
