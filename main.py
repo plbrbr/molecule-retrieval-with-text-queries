@@ -49,7 +49,7 @@ losses = []
 count_iter = 0
 time1 = time.time()
 printEvery = 50
-best_validation_loss = 1000000
+best_validation_accuracy = 1000000
 
 for i in range(nb_epochs):
     print('-----EPOCH{}-----'.format(i+1))
@@ -105,10 +105,10 @@ for i in range(nb_epochs):
     similarity = cosine_similarity(text_embeddings.cpu(), graph_embeddings.cpu())
     y_true = np.eye(similarity.shape[0])
     val_accuracy = label_ranking_average_precision_score(y_true, similarity)
-    best_validation_loss = min(best_validation_loss, val_loss)
+    best_validation_accuracy = min(best_validation_accuracy, val_accuracy)
     print(f"-----EPOCH{i+1}----- done.  Validation loss: {val_loss/len(val_loader):.3f}, Score: {val_accuracy:.3f}")
     if best_validation_loss==val_loss:
-        print('validation loss improved saving checkpoint...')
+        print('validation score improved saving checkpoint...')
         save_path = os.path.join('./', 'model.pt')
         torch.save({
             'epoch': i,
