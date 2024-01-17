@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader as TorchDataLoader
 from Model import Model
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.metrics import label_ranking_average_precision_score 
-from utils import prepare_submission, contrastive_loss
+from utils import prepare_submission, contrastive_loss, triplet_loss 
 import numpy as np
 from transformers import AutoTokenizer
 import torch
@@ -13,7 +13,8 @@ from torch import optim
 import time
 import os
 
-model_name = 'bert-base-uncased'
+#model_name = 'bert-base-uncased'
+model_name = 'matr1xx/bert-base-uncased-finetuned-mol-mlm-0.3-20epochs'
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
 val_dataset = GraphTextDataset(root='./data/', gt=gt, split='val', tokenizer=tokenizer)
@@ -66,12 +67,12 @@ for i in range(nb_epochs):
             input_ids.to(device), 
             attention_mask.to(device)
         )
-        current_loss = contrastive_loss(x_graph, x_text)   
+        current_loss = contrastive_loss(x_graph, x_text) + triplet_loss(x_graph, x_text)   
         optimizer.zero_grad()
         current_loss.backward()
         optimizer.step()
         loss += current_loss.item()
-        
+
         count_iter += 1
         if count_iter % printEvery == 0:
             time2 = time.time()
@@ -95,18 +96,20 @@ for i in range(nb_epochs):
             attention_mask.to(device)
         )
         # compute the val accuracy
-        graph_embeddings.append(x_graph.tolist())
-        text_embeddings.append(x_text.tolist())
+        graph_embeddings.append(x_graph.detach())
+        text_embeddings.append(x_text.detach())
 
         current_loss = contrastive_loss(x_graph, x_text)   
         val_loss += current_loss.item()
-    similarity = cosine_similarity(text_embeddings, graph_embeddings)
+    graph_embeddings = torch.vstack(graph_embeddings)
+    text_embeddings = torch.vstack(text_embeddings)
+    similarity = cosine_similarity(text_embeddings.cpu(), graph_embeddings.cpu())
     y_true = np.eye(similarity.shape[0])
     val_accuracy = label_ranking_average_precision_score(y_true, similarity)
     best_validation_loss = min(best_validation_loss, val_loss)
-    print('-----EPOCH'+str(i+1)+'----- done.  Validation loss: ', str(val_loss/len(val_loader)), "Accuracy: ", str(val_accuracy))
+    print(f"-----EPOCH{i+1}----- done.  Validation loss: {val_loss/len(val_loader):.3f}, Score: {val_accuracy:.3f}")
     if best_validation_loss==val_loss:
-        print('validation loss improoved saving checkpoint...')
+        print('validation loss improved saving checkpoint...')
         save_path = os.path.join('./', 'model.pt')
         torch.save({
             'epoch': i,
