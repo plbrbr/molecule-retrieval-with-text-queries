@@ -66,7 +66,7 @@ for i in range(nb_epochs):
             input_ids.to(device), 
             attention_mask.to(device)
         )
-        current_loss = contrastive_loss(x_graph, x_text) + 2*triplet_loss(x_graph, x_text)   
+        current_loss = contrastive_loss(x_graph, x_text) + triplet_loss(x_graph, x_text)   
         optimizer.zero_grad()
         current_loss.backward()
         optimizer.step()
