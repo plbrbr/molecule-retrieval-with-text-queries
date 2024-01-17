@@ -3,7 +3,7 @@ data
 submission.csv
 Kaggle_dataset/data
 Kaggle_kernel/kernel-metadata.json
-myvenv
+venv
 output
 .DS_Store
 
