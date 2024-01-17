@@ -74,7 +74,7 @@ class TextEncoder(nn.Module):
     def forward(self, input_ids, attention_mask):
         encoded_text = self.bert(input_ids, attention_mask=attention_mask)
         #print(encoded_text.last_hidden_state.size())
-        return torch.mean(encoded_text.last_hidden_state, dim=1).squeeze()
+        return torch.mean(encoded_text.last_hidden_state[:, :10, :], dim=1).squeeze()
     
 class Model(nn.Module):
     def __init__(self, model_name, num_node_features, nout, nhid, graph_hidden_channels):
