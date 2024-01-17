@@ -97,10 +97,6 @@ for i in range(nb_epochs):
         # compute the val accuracy
         graph_embeddings.append(x_graph.tolist())
         text_embeddings.append(x_text.tolist())
-        y_score = F.cosine_similarity(x_graph[:, None, ...], x_text[None, :, ...], dim=2)
-        y_true = F.one_hot(torch.arange(x_graph.shape[0], device=x_graph.device), num_classes=x_graph.shape[0])
-        current_accuracy = label_ranking_average_precision_score(y_true.detach().cpu(), y_score.detach().cpu())
-        val_accuracy += current_accuracy.item()
 
         current_loss = contrastive_loss(x_graph, x_text)   
         val_loss += current_loss.item()
