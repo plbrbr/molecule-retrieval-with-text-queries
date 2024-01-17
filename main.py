@@ -13,8 +13,7 @@ from torch import optim
 import time
 import os
 
-#model_name = 'bert-base-uncased'
-model_name = 'matr1xx/bert-base-uncased-finetuned-mol-mlm-0.3-20epochs'
+model_name = 'bert-base-uncased'
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
 val_dataset = GraphTextDataset(root='./data/', gt=gt, split='val', tokenizer=tokenizer)
@@ -41,7 +40,7 @@ optimizer = optim.AdamW(
     model.parameters(), 
     lr=learning_rate,
     betas=(0.9, 0.999),
-    weight_decay=0.01
+    weight_decay=1#0.01
 )
 
 epoch = 0
@@ -67,7 +66,7 @@ for i in range(nb_epochs):
             input_ids.to(device), 
             attention_mask.to(device)
         )
-        current_loss = contrastive_loss(x_graph, x_text) + triplet_loss(x_graph, x_text)   
+        current_loss = contrastive_loss(x_graph, x_text) + 2*triplet_loss(x_graph, x_text)   
         optimizer.zero_grad()
         current_loss.backward()
         optimizer.step()
