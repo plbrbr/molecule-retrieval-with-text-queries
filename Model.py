@@ -70,11 +70,17 @@ class TextEncoder(nn.Module):
     def __init__(self, model_name):
         super(TextEncoder, self).__init__()
         self.bert = AutoModel.from_pretrained(model_name)
+        self.linear = nn.Sequential(
+            nn.Linear(768, 768),
+            nn.LeakyReLU(), nn.Dropout(),
+            nn.Linear(768, 768)
+        )
         
     def forward(self, input_ids, attention_mask):
         encoded_text = self.bert(input_ids, attention_mask=attention_mask)
         #print(encoded_text.last_hidden_state.size())
-        return torch.mean(encoded_text.last_hidden_state[:, :10, :], dim=1).squeeze()
+        encoded_text = torch.mean(encoded_text.last_hidden_state[:, :10, :], dim=1).squeeze()
+        return self.linear(encoded_text)
     
 class Model(nn.Module):
     def __init__(self, model_name, num_node_features, nout, nhid, graph_hidden_channels):

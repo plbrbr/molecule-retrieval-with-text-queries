@@ -21,7 +21,7 @@ train_dataset = GraphTextDataset(root='./data/', gt=gt, split='train', tokenizer
 
 device = torch.device("cuda")
 
-nb_epochs = 20
+nb_epochs = 50
 batch_size = 32
 learning_rate = 2e-5
 
@@ -40,7 +40,7 @@ optimizer = optim.AdamW(
     model.parameters(), 
     lr=learning_rate,
     betas=(0.9, 0.999),
-    weight_decay=1#0.01
+    weight_decay=0.01
 )
 
 epoch = 0
