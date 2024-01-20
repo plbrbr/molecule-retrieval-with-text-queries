@@ -22,7 +22,7 @@ if __name__ == '__main__':
     with open('Kaggle_kernel/kaggle-script.py', 'r') as f:
         old_file = f.readlines()
 
-    old_file[old_file.index("model_name = 'bert-base-cased'\n")] = "model_name = '{}'\n".format(model_name)
+    old_file[old_file.index("    model_name = 'bert-base-cased'\n")] = "    model_name = '{}'\n".format(model_name)
 
     with open('Kaggle_kernel/kaggle-script.py', 'w') as f:
         f.writelines(old_file)
