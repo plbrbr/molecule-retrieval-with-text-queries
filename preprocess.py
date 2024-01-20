@@ -1,7 +1,5 @@
 import subprocess
 import sys
-
-subprocess.check_call([sys.executable, "-m", "pip", "install", "torch-geometric"])
     
 sys.path.append('Kaggle_dataset/source_code')
 
@@ -18,11 +16,15 @@ if __name__ == '__main__':
     if len(sys.argv):
         model_name = sys.argv[1]
 
-    ## edit Kaggle_kernel/kaggle-script.py
     with open('Kaggle_kernel/kaggle-script.py', 'r') as f:
         old_file = f.readlines()
 
-    old_file[old_file.index("    model_name = 'bert-base-cased'\n")] = "    model_name = '{}'\n".format(model_name)
+    try:
+        old_file[old_file.index("    model_name = 'bert-base-uncased'\n")] = "    model_name = '{}'\n".format(model_name)
+        print("Model name successfully changed to {}".format(model_name))
+    except:
+        print("Model name could not be changed")
+        exit()
 
     with open('Kaggle_kernel/kaggle-script.py', 'w') as f:
         f.writelines(old_file)

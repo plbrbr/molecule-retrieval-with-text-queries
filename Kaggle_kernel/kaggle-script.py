@@ -50,7 +50,7 @@ if __name__ == '__main__':
         high = x1.shape[0]
         return TML(x1, x2, torch.roll(x2, np.random.randint(low=1, high=high), 0)) + TML(x2, x1, torch.roll(x1, np.random.randint(low=1, high=high), 0))
 
-    model_name = 'bert-base-cased'
+    model_name = 'bert-base-uncased'
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     gt = np.load("../input/KAGGLE-PBAL/data/token_embedding_dict.npy", allow_pickle=True)[()]
     val_dataset = GraphTextDataset(root='../input/KAGGLE-PBAL/data/', gt=gt, split='val', tokenizer=tokenizer)

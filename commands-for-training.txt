@@ -1,15 +1,11 @@
-## preprocess data
-rm -R Kaggle_dataset/data/preprocessed
-python3 preprocess.py
+## prepare for new run
+sh prepare_for_run.sh <model_name>
 
-## change dataset files:
-kaggle datasets version -p Kaggle_dataset -m "Update" --dir-mode zip
-
-## push and run script:
+## run script:
 kaggle kernels push -p Kaggle_kernel
 
 ## get outputs of a kernel:
 kaggle kernels output alexlutt/ALTEGRAD -p output
 
 ## submit:
-kaggle competitions submit altegrad-2023-data-challenge -f output/submission.csv
+kaggle competitions submit altegrad-2023-data-challenge -f output/submission.csv -m "submission"
