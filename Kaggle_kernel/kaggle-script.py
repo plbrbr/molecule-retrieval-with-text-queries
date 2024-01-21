@@ -58,9 +58,9 @@ if __name__ == '__main__':
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    nb_epochs = 10
+    nb_epochs = 60
     batch_size = 32
-    learning_rate = 4e-5
+    learning_rate = 2e-5
 
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
@@ -153,7 +153,7 @@ for i in range(nb_epochs):
     best_validation_accuracy = max(best_validation_accuracy, val_accuracy)
     print(f"-----EPOCH{i+1}----- done.  Validation loss: {val_loss/len(val_loader):.3f}, score: {val_accuracy:.3f}")
     if best_validation_accuracy==val_accuracy:
-        print('Validation loss improved - saving checkpoint...')
+        print('Validation score improved - saving checkpoint...')
         save_path = os.path.join('../working/', 'best_model.pt')
         torch.save({
             'epoch': i,
