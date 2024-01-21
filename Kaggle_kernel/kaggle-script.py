@@ -19,8 +19,8 @@ from transformers import AutoTokenizer
 import torch
 from torch import optim
 import time
-
 if __name__ == '__main__':
+    torch.cuda.empty_cache()
     CE = torch.nn.CrossEntropyLoss()
     def contrastive_loss(x1, x2):
         logits = torch.matmul(x1, torch.transpose(x2, 0, 1))
@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     nb_epochs = 10
     batch_size = 32
-    learning_rate = 2e-5
+    learning_rate = 4e-5
 
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
@@ -86,7 +86,7 @@ losses = []
 count_iter = 0
 time1 = time.time()
 printEvery = 50
-best_validation_accuracy = 1000000
+best_validation_accuracy = 0
 
 for i in range(nb_epochs):
     print('-----EPOCH{}-----'.format(i+1))
@@ -150,7 +150,7 @@ for i in range(nb_epochs):
     similarity = cosine_similarity(text_embeddings.cpu(), graph_embeddings.cpu())
     y_true = np.eye(similarity.shape[0])
     val_accuracy = label_ranking_average_precision_score(y_true, similarity)
-    best_validation_accuracy = min(best_validation_accuracy, val_accuracy)
+    best_validation_accuracy = max(best_validation_accuracy, val_accuracy)
     print(f"-----EPOCH{i+1}----- done.  Validation loss: {val_loss/len(val_loader):.3f}, score: {val_accuracy:.3f}")
     if best_validation_accuracy==val_accuracy:
         print('Validation loss improved - saving checkpoint...')

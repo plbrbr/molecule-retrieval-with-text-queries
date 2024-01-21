@@ -16,7 +16,8 @@ pip install -r requirements.txt
 
 ```bash
 sh prepare_for_run.sh model_name
-kaggle kernels push -p Kaggle_kernel 
+# wait until dataset is loaded on Kaggle
+sh train.sh
 kaggle kernels output alexlutt/ALTEGRAD -p output
 kaggle competitions submit altegrad-2023-data-challenge -f output/submission.csv -m "submission"
 ```

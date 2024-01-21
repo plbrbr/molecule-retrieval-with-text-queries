@@ -12,22 +12,25 @@ import torch
 
 if __name__ == '__main__':
 
-    model_name = 'bert-base-cased'
-    if len(sys.argv):
+    model_name = 'bert-base-uncased'
+    if len(sys.argv) > 1:
         model_name = sys.argv[1]
 
-    with open('Kaggle_kernel/kaggle-script.py', 'r') as f:
-        old_file = f.readlines()
+        with open('Kaggle_kernel/kaggle-script.py', 'r') as f:
+            old_file = f.readlines()
 
-    try:
-        old_file[old_file.index("    model_name = 'bert-base-uncased'\n")] = "    model_name = '{}'\n".format(model_name)
-        print("Model name successfully changed to {}".format(model_name))
-    except:
-        print("Model name could not be changed")
-        exit()
+        try:
+            old_file[old_file.index("    model_name = 'bert-base-uncased'\n")] = "    model_name = '{}'\n".format(model_name)
+            print("Model name successfully changed to {}".format(model_name))
+        except:
+            print("Model name could not be changed")
+            exit()
 
-    with open('Kaggle_kernel/kaggle-script.py', 'w') as f:
-        f.writelines(old_file)
+        with open('Kaggle_kernel/kaggle-script.py', 'w') as f:
+            f.writelines(old_file)
+
+    else:
+        print("No model name given, using default model bert-base-uncased")
         
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     gt = np.load("Kaggle_dataset/data/token_embedding_dict.npy", allow_pickle=True)[()]
