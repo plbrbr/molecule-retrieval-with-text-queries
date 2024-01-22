@@ -25,13 +25,18 @@ def contrastive_loss_component(x1, x2):
     )
     return loss
 
+def distance_function(x, y, dim=1):
+    return 1.0 - F.cosine_similarity(x, y, dim=dim)
+
 TML = torch.nn.TripletMarginWithDistanceLoss(
         margin=0.1,
-    distance_function=lambda x, y: 1.0 - F.cosine_similarity(x, y)
+    distance_function=distance_function
 )
 def triplet_loss(x1, x2):
-    high = x1.shape[0]
-    return TML(x1, x2, torch.roll(x2, np.random.randint(low=1, high=high), 0)) + TML(x2, x1, torch.roll(x1, np.random.randint(low=1, high=high), 0))
+    distances = distance_function(x1[:, None, :], x2[None, :, :], dim=2)
+    x1_negatives = x2[torch.argmax(distances, dim=1)]
+    x2_negatives = x1[torch.argmax(distances, dim=0)]
+    return TML(x1, x2, x1_negatives) + TML(x2, x1, x2_negatives)
 
 def prepare_submission(similarity, path: str):
     solution = pd.DataFrame(similarity)
