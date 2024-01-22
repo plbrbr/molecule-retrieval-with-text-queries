@@ -84,23 +84,24 @@ for i in range(nb_epochs):
     model.eval()
     graph_embeddings, text_embeddings = [], []
     val_loss = 0
-    for batch in val_loader:
-        input_ids = batch.input_ids
-        batch.pop('input_ids')
-        attention_mask = batch.attention_mask
-        batch.pop('attention_mask')
-        graph_batch = batch
-        x_graph, x_text = model(
-            graph_batch.to(device), 
-            input_ids.to(device), 
-            attention_mask.to(device)
-        )
-        # compute the val accuracy
-        graph_embeddings.append(x_graph.detach())
-        text_embeddings.append(x_text.detach())
+    with torch.no_grad():
+        for batch in val_loader:
+            input_ids = batch.input_ids
+            batch.pop('input_ids')
+            attention_mask = batch.attention_mask
+            batch.pop('attention_mask')
+            graph_batch = batch
+            x_graph, x_text = model(
+                graph_batch.to(device), 
+                input_ids.to(device), 
+                attention_mask.to(device)
+            )
+            # compute the val accuracy
+            graph_embeddings.append(x_graph.detach())
+            text_embeddings.append(x_text.detach())
 
-        current_loss = contrastive_loss(x_graph, x_text)   
-        val_loss += current_loss.item()
+            current_loss = contrastive_loss(x_graph, x_text)   
+            val_loss += current_loss.item()
     graph_embeddings = torch.vstack(graph_embeddings)
     text_embeddings = torch.vstack(text_embeddings)
     similarity = cosine_similarity(text_embeddings.cpu(), graph_embeddings.cpu())
