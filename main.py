@@ -13,8 +13,8 @@ from torch import optim
 import time
 import os
 
-#model_name = 'bert-base-uncased'
-model_name = 'allenai/scibert_scivocab_uncased'
+model_name = 'bert-base-uncased'
+#model_name = 'allenai/scibert_scivocab_uncased'
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
 val_dataset = GraphTextDataset(root='./data/', gt=gt, split='val', tokenizer=tokenizer)
@@ -24,7 +24,7 @@ device = torch.device("cuda")
 
 nb_epochs = 100
 batch_size = 128
-learning_rate = 2e-5
+learning_rate = 2e-6
 
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
@@ -33,9 +33,15 @@ model = Model(
     model_name=model_name, 
     num_node_features=300, 
     nout=768, 
-    nhid=512, 
-    graph_hidden_channels=512
-).to(device) # nout = bert model hidden dim
+    nhid=1024, 
+    graph_hidden_channels=1024
+)
+
+checkpoint = torch.load("./model.pt")
+model.load_state_dict(checkpoint['model_state_dict'])
+del checkpoint
+
+model.to(device) # nout = bert model hidden dim
 
 optimizer = optim.AdamW(
     model.parameters(), 
@@ -50,7 +56,7 @@ losses = []
 count_iter = 0
 time1 = time.time()
 printEvery = 50
-best_validation_accuracy = 0
+best_validation_accuracy = 0.74
 
 for i in range(nb_epochs):
     print('-----EPOCH{}-----'.format(i+1))

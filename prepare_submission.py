@@ -20,7 +20,7 @@ train_dataset = GraphTextDataset(root='./data/', gt=gt, split='train', tokenizer
 device = torch.device("cuda")
 
 nb_epochs = 20
-batch_size = 32
+batch_size = 128
 learning_rate = 2e-5
 
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
@@ -30,8 +30,8 @@ model = Model(
     model_name=model_name, 
     num_node_features=300, 
     nout=768, 
-    nhid=512, 
-    graph_hidden_channels=256
+    nhid=1024, 
+    graph_hidden_channels=1024
 ).to(device) # nout = bert model hidden dim
 
 optimizer = optim.AdamW(
@@ -58,17 +58,18 @@ idx_to_cid = test_cids_dataset.get_idx_to_cid()
 
 test_loader = DataLoader(test_cids_dataset, batch_size=batch_size, shuffle=False)
 
-graph_embeddings = []
-for batch in test_loader:
-    for output in graph_model(batch.to(device)):
-        graph_embeddings.append(output.tolist())
+with torch.no_grad():
+    graph_embeddings = []
+    for batch in test_loader:
+        for output in graph_model(batch.to(device)):
+            graph_embeddings.append(output.tolist())
 
-test_text_loader = TorchDataLoader(test_text_dataset, batch_size=batch_size, shuffle=False)
-text_embeddings = []
-for batch in test_text_loader:
-    for output in text_model(batch['input_ids'].to(device), 
+    test_text_loader = TorchDataLoader(test_text_dataset, batch_size=batch_size, shuffle=False)
+    text_embeddings = []
+    for batch in test_text_loader:
+        for output in text_model(batch['input_ids'].to(device), 
                              attention_mask=batch['attention_mask'].to(device)):
-        text_embeddings.append(output.tolist())
+            text_embeddings.append(output.tolist())
 
-similarity = cosine_similarity(text_embeddings, graph_embeddings)
-prepare_submission(similarity, "submissions/submission.csv")
+    similarity = cosine_similarity(text_embeddings, graph_embeddings)
+    prepare_submission(similarity, "submissions/submission.csv")
