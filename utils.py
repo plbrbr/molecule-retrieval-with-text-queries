@@ -3,6 +3,7 @@ import torch.nn.functional as F
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
+from geomloss import SamplesLoss
 
 CE = torch.nn.CrossEntropyLoss()
 def contrastive_loss(x1, x2):
@@ -37,6 +38,10 @@ def triplet_loss(x1, x2):
     x1_negatives = x2[torch.argmax(distances, dim=1)]
     x2_negatives = x1[torch.argmax(distances, dim=0)]
     return TML(x1, x2, x1_negatives) + TML(x2, x1, x2_negatives)
+
+OTLoss = SamplesLoss(loss="sinkhorn", p=2, blur=.05)
+def ot_loss(x1, x2):
+    return OTLoss(x1, x2)
 
 def prepare_submission(similarity, path: str):
     solution = pd.DataFrame(similarity)
