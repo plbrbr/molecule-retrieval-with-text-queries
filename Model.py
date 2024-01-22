@@ -8,7 +8,7 @@ from transformers import AutoModel
 
 
 class GraphEncoder(nn.Module):
-    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels, n_gins=5, dropout_rate=0.05):
+    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels, n_gins=5, dropout_rate=0.2):
         super(GraphEncoder, self).__init__()
         self.nhid = nhid
         self.nout = nout
@@ -71,16 +71,18 @@ class TextEncoder(nn.Module):
         super(TextEncoder, self).__init__()
         self.bert = AutoModel.from_pretrained(model_name)
         self.linear = nn.Sequential(
-            nn.Linear(768, 768),
-            nn.LeakyReLU(), nn.Dropout(),
-            nn.Linear(768, 768)
+            nn.Linear(768, 2 * 768),
+            nn.BatchNorm1d(2 * 768), nn.LeakyReLU(), nn.Dropout(),
+            nn.Linear(2 *768, 2 * 768),
+            nn.BatchNorm1d(2 * 768), nn.LeakyReLU(), nn.Dropout(),
+            nn.Linear(2 * 768, 768)
         )
         
     def forward(self, input_ids, attention_mask):
         encoded_text = self.bert(input_ids, attention_mask=attention_mask)
         #print(encoded_text.last_hidden_state.size())
-        encoded_text = torch.mean(encoded_text.last_hidden_state[:, :10, :], dim=1).squeeze()
-        return self.linear(encoded_text)
+        #encoded_text = torch.mean(encoded_text.last_hidden_state[:, 0, :], dim=1).squeeze()
+        return self.linear(encoded_text.last_hidden_state[:, 0, :])
     
 class Model(nn.Module):
     def __init__(self, model_name, num_node_features, nout, nhid, graph_hidden_channels):

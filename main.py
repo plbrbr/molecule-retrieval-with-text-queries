@@ -13,7 +13,8 @@ from torch import optim
 import time
 import os
 
-model_name = 'bert-base-uncased'
+#model_name = 'bert-base-uncased'
+model_name = 'allenai/scibert_scivocab_uncased'
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
 val_dataset = GraphTextDataset(root='./data/', gt=gt, split='val', tokenizer=tokenizer)
@@ -21,8 +22,8 @@ train_dataset = GraphTextDataset(root='./data/', gt=gt, split='train', tokenizer
 
 device = torch.device("cuda")
 
-nb_epochs = 50
-batch_size = 32
+nb_epochs = 100
+batch_size = 128
 learning_rate = 2e-5
 
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
@@ -33,7 +34,7 @@ model = Model(
     num_node_features=300, 
     nout=768, 
     nhid=512, 
-    graph_hidden_channels=256
+    graph_hidden_channels=512
 ).to(device) # nout = bert model hidden dim
 
 optimizer = optim.AdamW(
@@ -49,7 +50,7 @@ losses = []
 count_iter = 0
 time1 = time.time()
 printEvery = 50
-best_validation_accuracy = 1000000
+best_validation_accuracy = 0
 
 for i in range(nb_epochs):
     print('-----EPOCH{}-----'.format(i+1))
@@ -105,9 +106,9 @@ for i in range(nb_epochs):
     similarity = cosine_similarity(text_embeddings.cpu(), graph_embeddings.cpu())
     y_true = np.eye(similarity.shape[0])
     val_accuracy = label_ranking_average_precision_score(y_true, similarity)
-    best_validation_accuracy = min(best_validation_accuracy, val_accuracy)
+    best_validation_accuracy = max(best_validation_accuracy, val_accuracy)
     print(f"-----EPOCH{i+1}----- done.  Validation loss: {val_loss/len(val_loader):.3f}, Score: {val_accuracy:.3f}")
-    if best_validation_accuracy==val_accuracy:
+    if best_validation_accuracy == val_accuracy:
         print('validation score improved saving checkpoint...')
         save_path = os.path.join('./', 'model.pt')
         torch.save({
