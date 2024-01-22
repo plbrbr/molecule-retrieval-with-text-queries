@@ -4,6 +4,7 @@ submission.csv
 Kaggle_dataset/data
 venv
 output
+logs
 .DS_Store
 
 # Byte-compiled / optimized / DLL files

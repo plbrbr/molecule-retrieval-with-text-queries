@@ -15,9 +15,10 @@ pip install -r requirements.txt
 ## New training session
 
 ```bash
-sh prepare_for_run.sh model_name nb_epochs
+sh prepare_for_run.sh model_name nb_epochs batch_size learning_rate
 # wait until dataset is loaded on Kaggle
 sh train.sh
-kaggle kernels output alexlutt/ALTEGRAD -p output
+# wait until run finished
+sh get_outputs.sh
 kaggle competitions submit altegrad-2023-data-challenge -f output/submission.csv -m "submission"
 ```
