@@ -15,7 +15,7 @@ pip install -r requirements.txt
 ## New training session
 
 ```bash
-sh prepare_for_run.sh model_name
+sh prepare_for_run.sh model_name nb_epochs
 # wait until dataset is loaded on Kaggle
 sh train.sh
 kaggle kernels output alexlutt/ALTEGRAD -p output

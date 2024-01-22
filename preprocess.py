@@ -12,25 +12,30 @@ import torch
 
 if __name__ == '__main__':
 
-    model_name = 'bert-base-uncased'
-    if len(sys.argv) > 1:
+    if len(sys.argv) == 5:
         model_name = sys.argv[1]
+        nb_epochs = sys.argv[2]
+        batch_size = sys.argv[3]
+        learning_rate = sys.argv[4]
 
         with open('Kaggle_kernel/kaggle-script.py', 'r') as f:
             old_file = f.readlines()
 
         try:
-            old_file[old_file.index("    model_name = 'bert-base-uncased'\n")] = "    model_name = '{}'\n".format(model_name)
-            print("Model name successfully changed to {}".format(model_name))
+            old_file[55] = "    model_name = '{}'\n".format(model_name)
+            old_file[63] = "    nb_epochs = {}\n".format(nb_epochs)
+            old_file[64] = "    batch_size = {}\n".format(batch_size)
+            old_file[65] = "    learning_rate = {}\n".format(learning_rate)
+            print("Script successfully changed")
         except:
-            print("Model name could not be changed")
-            exit()
+            print("Script could not be changed")
 
         with open('Kaggle_kernel/kaggle-script.py', 'w') as f:
             f.writelines(old_file)
 
     else:
-        print("No model name given, using default model bert-base-uncased")
+        print("Uncorrect number of arguments, please provide model_name, nb_epochs, batch_size and learning_rate")
+        exit()
         
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     gt = np.load("Kaggle_dataset/data/token_embedding_dict.npy", allow_pickle=True)[()]
@@ -38,8 +43,6 @@ if __name__ == '__main__':
     train_dataset = GraphTextDataset(root='Kaggle_dataset/data/', gt=gt, split='train', tokenizer=tokenizer)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    batch_size = 32
 
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)

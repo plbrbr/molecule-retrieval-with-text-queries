@@ -1,5 +1,5 @@
 {
-  "id": "alexlutt/ALTEGRAD",
+  "id": "manalakhannouss/ALTEGRAD",
   "title": "ALTEGRAD",
   "code_file": "kaggle-script.py",
   "language": "python",
@@ -8,7 +8,7 @@
   "enable_gpu": "true",
   "enable_tpu": "false",
   "enable_internet": "true",
-  "dataset_sources": ["alexlutt/KAGGLE-PBAL"],
+  "dataset_sources": ["manalakhannouss/KAGGLE-PBALMA"],
   "competition_sources": [],
   "kernel_sources": [],
   "model_sources": []

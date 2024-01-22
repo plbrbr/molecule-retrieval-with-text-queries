@@ -1,10 +1,13 @@
 import subprocess
 import sys
 import os
+import warnings
+warnings.filterwarnings('ignore')
 
 subprocess.check_call([sys.executable, "-m", "pip", "install", "torch-geometric"])
+subprocess.check_call([sys.executable, "-m", "pip", "install", "sacremoses"])
     
-sys.path.append('/kaggle/input/KAGGLE-PBAL/source_code')
+sys.path.append('/kaggle/input/KAGGLE-PBALMA/source_code')
 
 from dataloader import GraphTextDataset, GraphDataset, TextDataset
 from torch_geometric.data import DataLoader
@@ -50,17 +53,17 @@ if __name__ == '__main__':
         high = x1.shape[0]
         return TML(x1, x2, torch.roll(x2, np.random.randint(low=1, high=high), 0)) + TML(x2, x1, torch.roll(x1, np.random.randint(low=1, high=high), 0))
 
-    model_name = 'bert-base-uncased'
+    model_name = 'bert-base-cased'
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    gt = np.load("../input/KAGGLE-PBAL/data/token_embedding_dict.npy", allow_pickle=True)[()]
-    val_dataset = GraphTextDataset(root='../input/KAGGLE-PBAL/data/', gt=gt, split='val', tokenizer=tokenizer)
-    train_dataset = GraphTextDataset(root='../input/KAGGLE-PBAL/data/', gt=gt, split='train', tokenizer=tokenizer)
+    gt = np.load("../input/KAGGLE-PBALMA/data/token_embedding_dict.npy", allow_pickle=True)[()]
+    val_dataset = GraphTextDataset(root='../input/KAGGLE-PBALMA/data/', gt=gt, split='val', tokenizer=tokenizer)
+    train_dataset = GraphTextDataset(root='../input/KAGGLE-PBALMA/data/', gt=gt, split='train', tokenizer=tokenizer)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    nb_epochs = 60
+    nb_epochs = 1
     batch_size = 32
-    learning_rate = 2e-5
+    learning_rate = 1e-5
 
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
@@ -175,8 +178,8 @@ with torch.no_grad():
     graph_model = model.get_graph_encoder()
     text_model = model.get_text_encoder()
 
-    test_cids_dataset = GraphDataset(root='../input/KAGGLE-PBAL/data/', gt=gt, split='test_cids')
-    test_text_dataset = TextDataset(file_path='../input/KAGGLE-PBAL/data/test_text.txt', tokenizer=tokenizer)
+    test_cids_dataset = GraphDataset(root='../input/KAGGLE-PBALMA/data/', gt=gt, split='test_cids')
+    test_text_dataset = TextDataset(file_path='../input/KAGGLE-PBALMA/data/test_text.txt', tokenizer=tokenizer)
 
     idx_to_cid = test_cids_dataset.get_idx_to_cid()
 
