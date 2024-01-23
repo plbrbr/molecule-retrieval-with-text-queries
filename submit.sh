@@ -1,0 +1,1 @@
+kaggle competitions submit altegrad-2023-data-challenge -f output/submission.csv -m "submission"

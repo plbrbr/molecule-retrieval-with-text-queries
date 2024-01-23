@@ -1,6 +1,6 @@
 import subprocess
-import sys
-import os
+import sys, os
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -53,7 +53,7 @@ if __name__ == '__main__':
         high = x1.shape[0]
         return TML(x1, x2, torch.roll(x2, np.random.randint(low=1, high=high), 0)) + TML(x2, x1, torch.roll(x1, np.random.randint(low=1, high=high), 0))
 
-    model_name = 'bert-base-cased'
+    model_name = 'allenai/scibert_scivocab_cased'
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     gt = np.load("../input/KAGGLE-PBALMA/data/token_embedding_dict.npy", allow_pickle=True)[()]
     val_dataset = GraphTextDataset(root='../input/KAGGLE-PBALMA/data/', gt=gt, split='val', tokenizer=tokenizer)
@@ -61,10 +61,8 @@ if __name__ == '__main__':
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    nb_epochs = 1
+    nb_epochs = 20
     batch_size = 32
-    learning_rate = 1e-5
-
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
@@ -77,11 +75,13 @@ if __name__ == '__main__':
     ).to(device) # nout = bert model hidden dim
 
     optimizer = optim.AdamW(
-        model.parameters(), 
-        lr=learning_rate,
+        [{'params': model.graph_encoder.parameters(), 'lr': 1e-4},
+         {'params': model.text_encoder.parameters(), 'lr': 2e-5}
+        ],
         betas=(0.9, 0.999),
         weight_decay=0.01
     )
+    scheduler = ReduceLROnPlateau(optimizer, 'max', patience=3, factor=0.1)
 
 epoch = 0
 loss = 0
@@ -153,6 +153,7 @@ for i in range(nb_epochs):
     similarity = cosine_similarity(text_embeddings.cpu(), graph_embeddings.cpu())
     y_true = np.eye(similarity.shape[0])
     val_accuracy = label_ranking_average_precision_score(y_true, similarity)
+    scheduler.step(val_accuracy)
     best_validation_accuracy = max(best_validation_accuracy, val_accuracy)
     print(f"-----EPOCH{i+1}----- done.  Validation loss: {val_loss/len(val_loader):.3f}, score: {val_accuracy:.3f}")
     if best_validation_accuracy==val_accuracy:
