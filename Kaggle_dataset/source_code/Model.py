@@ -58,9 +58,11 @@ class TextEncoder(nn.Module):
         )
         
     def forward(self, input_ids, attention_mask):
-        encoded_text = self.linear(self.bert(input_ids, attention_mask=attention_mask))
+        encoded_text = self.bert(input_ids, attention_mask=attention_mask)
+        last_hidden_state = encoded_text.last_hidden_state[:, 0, :]
+        last_hidden_state = self.linear(last_hidden_state)
         #print(encoded_text.last_hidden_state.size())
-        return encoded_text.last_hidden_state[:, 0, :]
+        return last_hidden_state
     
 class Model(nn.Module):
     def __init__(self, model_name, num_node_features, nout, nhid, graph_hidden_channels):
