@@ -29,9 +29,9 @@ if __name__ == '__main__':
                 old_file = f.readlines()
 
             try:
-                old_file[55] = "    model_name = '{}'\n".format(model_name)
-                old_file[63] = "    nb_epochs = {}\n".format(nb_epochs)
-                old_file[64] = "    batch_size = {}\n".format(batch_size)
+                old_file[60] = "    model_name = '{}'\n".format(model_name)
+                old_file[68] = "    nb_epochs = {}\n".format(nb_epochs)
+                old_file[69] = "    batch_size = {}\n".format(batch_size)
                 print("Script successfully changed")
             except:
                 print("Script could not be changed")
