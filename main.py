@@ -32,22 +32,31 @@ train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, nu
 model = Model(
     model_name=model_name, 
     num_node_features=300, 
-    nout=1024, 
+    nout=1024, # nout = bert model hidden dim
     nhid=1024, 
     graph_hidden_channels=1024
 )
 
-checkpoint = torch.load("./model.pt")
-model.load_state_dict(checkpoint['model_state_dict'])
-del checkpoint
+# checkpoint = torch.load("./model.pt")
+# model.load_state_dict(checkpoint['model_state_dict'])
+# del checkpoint
 
-model.to(device) # nout = bert model hidden dim
+model.to(device)
 
 optimizer = optim.AdamW(
-    model.parameters(), 
-    lr=learning_rate,
+    [
+        {'params': model.graph_encoder.parameters(), 'lr': 1e-3},
+        {'params': model.text_encoder.linear.parameters(), 'lr': 1e-3},
+        {'params': model.text_encoder.bert.parameters(), 'lr': 2e-4}
+    ],
     betas=(0.9, 0.999),
     weight_decay=0.01
+)
+lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(
+    optimizer=optimizer, 
+    gamma=0.955,
+    last_epoch=-1,
+    verbose=True,
 )
 
 epoch = 0
@@ -56,7 +65,7 @@ losses = []
 count_iter = 0
 time1 = time.time()
 printEvery = 50
-best_validation_accuracy = 0.74
+best_validation_accuracy = 0.0
 
 for i in range(nb_epochs):
     print('-----EPOCH{}-----'.format(i+1))
@@ -86,7 +95,7 @@ for i in range(nb_epochs):
                                                                         time2 - time1, loss/printEvery))
             losses.append(loss)
             loss = 0
-
+    lr_scheduler.step()
     model.eval()
     graph_embeddings, text_embeddings = [], []
     val_loss = 0
