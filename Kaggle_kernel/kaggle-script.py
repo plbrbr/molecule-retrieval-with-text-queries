@@ -74,7 +74,7 @@ if __name__ == '__main__':
     model = Model(
         model_name=model_name, 
         num_node_features=300, 
-        nout=768, 
+        nout=1024, 
         nhid=512, 
         graph_hidden_channels=256
     ).to(device) # nout = bert model hidden dim
