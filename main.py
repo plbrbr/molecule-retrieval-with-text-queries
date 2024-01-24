@@ -83,7 +83,7 @@ for i in range(nb_epochs):
             attention_mask.to(device)
         )
         contrast_loss = contrastive_loss(x_graph, x_text)
-        trip_loss = triplet_loss(x_graph, x_text)
+        trip_loss = 5.0 * triplet_loss(x_graph, x_text)
         current_loss = contrast_loss + trip_loss
         optimizer.zero_grad()
         current_loss.backward()
