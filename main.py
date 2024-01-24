@@ -93,7 +93,7 @@ for i in range(nb_epochs):
         count_iter += 1
         if count_iter % printEvery == 0:
             time2 = time.time()
-            print("Iteration: {0}, Time: {1:.4f} s, training loss: {2:.4f} {2:.4f}".format(count_iter,
+            print("Iteration: {0}, Time: {1:.4f} s, training loss: {2:.4f} {3:.4f}".format(count_iter,
                                                                         time2 - time1, loss/printEvery, trip_loss.item()))
             losses.append(loss)
             loss = 0
