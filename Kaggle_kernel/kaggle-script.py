@@ -5,7 +5,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 subprocess.check_call([sys.executable, "-m", "pip", "install", "torch-geometric"])
-subprocess.check_call([sys.executable, "-m", "pip", "install", "sacremoses"])
+# subprocess.check_call([sys.executable, "-m", "pip", "install", "sacremoses"])
     
 sys.path.append('/kaggle/input/KAGGLE-PBALMA/source_code')
 
@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    nb_epochs = 20
+    nb_epochs = 10
     batch_size = 32
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)

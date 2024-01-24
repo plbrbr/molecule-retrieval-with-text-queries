@@ -51,10 +51,9 @@ class TextEncoder(nn.Module):
         self.bert = AutoModel.from_pretrained(model_name)
         self.linear = nn.Sequential(
             nn.Linear(self.d_hidden, self.d_hidden),
-            nn.LeakyReLU(), nn.Dropout(),
+            nn.LeakyReLU(), nn.Dropout(p=0.2),
             nn.Linear(self.d_hidden, self.d_hidden),
-            nn.LeakyReLU(), nn.Dropout(),
-            nn.Linear(self.d_hidden, self.d_hidden)
+            nn.LeakyReLU()
         )
         
     def forward(self, input_ids, attention_mask):
