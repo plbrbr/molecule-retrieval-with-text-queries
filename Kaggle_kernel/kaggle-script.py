@@ -5,7 +5,6 @@ import warnings
 warnings.filterwarnings('ignore')
 
 subprocess.check_call([sys.executable, "-m", "pip", "install", "torch-geometric"])
-# subprocess.check_call([sys.executable, "-m", "pip", "install", "sacremoses"])
     
 sys.path.append('/kaggle/input/KAGGLE-PBALMA/source_code')
 
@@ -27,7 +26,6 @@ if __name__ == '__main__':
     CE = torch.nn.CrossEntropyLoss()
     def contrastive_loss(x1, x2):
         logits = torch.matmul(x1, torch.transpose(x2, 0, 1))
-        #logits = torch.sum((x1[:, None, :] - x2[None, :, :])**2, dim=2)
         labels = torch.arange(logits.shape[0], device=x1.device)
         return CE(logits, labels) + CE(torch.transpose(logits, 0, 1), labels)
 
@@ -77,7 +75,7 @@ if __name__ == '__main__':
         nout=1024, 
         nhid=512, 
         graph_hidden_channels=256
-    ).to(device) # nout = bert model hidden dim
+    ).to(device)
 
     optimizer = optim.AdamW(
         [{'params': model.graph_encoder.parameters(), 'lr': 1e-4},
@@ -87,7 +85,7 @@ if __name__ == '__main__':
         betas=(0.9, 0.999),
         weight_decay=0.01
     )
-    scheduler = ReduceLROnPlateau(optimizer, 'max', patience=3, factor=0.1)
+    scheduler = ReduceLROnPlateau(optimizer, 'max', patience=3, factor=0.1, verbose=True)
 
 epoch = 0
 loss = 0

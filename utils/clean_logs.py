@@ -1,8 +1,8 @@
 with open('Kaggle_kernel/kaggle-script.py', 'r') as f:
     script = f.readlines()
-    model_name = script[60].split("'")[1].split('/')[1]
-    batch_size = int(script[68].split('= ')[1])
-    nb_epochs = int(script[69].split('= ')[1])
+    model_name = script[58].split("'")[1].split('/')[1]
+    batch_size = int(script[66].split('= ')[1])
+    nb_epochs = int(script[67].split('= ')[1])
     
 log_filename = f'logs/{model_name}_bs_{batch_size}_epochs_{nb_epochs}.log'
 
