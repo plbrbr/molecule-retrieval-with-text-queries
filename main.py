@@ -82,7 +82,9 @@ for i in range(nb_epochs):
             input_ids.to(device), 
             attention_mask.to(device)
         )
-        current_loss = contrastive_loss(x_graph, x_text) + triplet_loss(x_graph, x_text)   
+        contrast_loss = contrastive_loss(x_graph, x_text)
+        trip_loss = triplet_loss(x_graph, x_text)
+        current_loss = contrast_loss + trip_loss
         optimizer.zero_grad()
         current_loss.backward()
         optimizer.step()
@@ -91,8 +93,8 @@ for i in range(nb_epochs):
         count_iter += 1
         if count_iter % printEvery == 0:
             time2 = time.time()
-            print("Iteration: {0}, Time: {1:.4f} s, training loss: {2:.4f}".format(count_iter,
-                                                                        time2 - time1, loss/printEvery))
+            print("Iteration: {0}, Time: {1:.4f} s, training loss: {2:.4f} {2:.4f}".format(count_iter,
+                                                                        time2 - time1, loss/printEvery, trip_loss))
             losses.append(loss)
             loss = 0
     lr_scheduler.step()
