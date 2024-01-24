@@ -30,7 +30,7 @@ def distance_function(x, y, dim=1):
     return 1.0 - F.cosine_similarity(x, y, dim=dim)
 
 TML = torch.nn.TripletMarginWithDistanceLoss(
-        margin=0.1,
+        margin=0.3,
     distance_function=distance_function
 )
 def triplet_loss(x1, x2):

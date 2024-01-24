@@ -13,8 +13,8 @@ from torch import optim
 import time
 import os
 
-model_name = 'bert-base-uncased'
-#model_name = 'allenai/scibert_scivocab_uncased'
+#model_name = 'bert-base-uncased'
+model_name = 'allenai/scibert_scivocab_uncased'
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
 val_dataset = GraphTextDataset(root='./data/', gt=gt, split='val', tokenizer=tokenizer)
@@ -32,7 +32,7 @@ train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, nu
 model = Model(
     model_name=model_name, 
     num_node_features=300, 
-    nout=768, 
+    nout=1024, 
     nhid=1024, 
     graph_hidden_channels=1024
 )
