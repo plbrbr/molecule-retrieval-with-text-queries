@@ -12,7 +12,7 @@ import torch
 
 if __name__ == '__main__':
     model_name = 'allenai/scibert_scivocab_cased'
-    nb_epochs = 10
+    nb_epochs = 5
     batch_size = 32
 
     if not (len(sys.argv) in [1, 4]):
@@ -29,9 +29,9 @@ if __name__ == '__main__':
                 old_file = f.readlines()
 
             try:
-                old_file[60] = "    model_name = '{}'\n".format(model_name)
-                old_file[68] = "    nb_epochs = {}\n".format(nb_epochs)
-                old_file[69] = "    batch_size = {}\n".format(batch_size)
+                old_file[58] = "    model_name = '{}'\n".format(model_name)
+                old_file[66] = "    nb_epochs = {}\n".format(nb_epochs)
+                old_file[67] = "    batch_size = {}\n".format(batch_size)
                 print("Script successfully changed")
             except:
                 print("Script could not be changed")

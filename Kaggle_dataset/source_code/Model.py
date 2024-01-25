@@ -52,9 +52,9 @@ class TextEncoder(nn.Module):
         self.linear = nn.Sequential(
             nn.Linear(self.d_hidden, self.d_hidden),
             nn.LeakyReLU(), nn.Dropout(p=0.2),
-            nn.Linear(self.d_hidden, self.d_hidden),
-            nn.LeakyReLU(), nn.Dropout(p=0.2),
-            nn.Linear(self.d_hidden, 1024)
+            nn.Linear(self.d_hidden, self.d_hidden)#,
+            # nn.LeakyReLU(), nn.Dropout(p=0.2),
+            # nn.Linear(self.d_hidden, self.d_hidden)
         )
         
     def forward(self, input_ids, attention_mask):

@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    nb_epochs = 10
+    nb_epochs = 50
     batch_size = 32
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
@@ -72,9 +72,9 @@ if __name__ == '__main__':
     model = Model(
         model_name=model_name, 
         num_node_features=300, 
-        nout=1024, 
+        nout=768, 
         nhid=512, 
-        graph_hidden_channels=256
+        graph_hidden_channels=256 
     ).to(device)
 
     optimizer = optim.AdamW(
@@ -85,7 +85,7 @@ if __name__ == '__main__':
         betas=(0.9, 0.999),
         weight_decay=0.01
     )
-    scheduler = ReduceLROnPlateau(optimizer, 'max', patience=3, factor=0.1, verbose=True)
+    scheduler = ReduceLROnPlateau(optimizer, 'max', patience=2, factor=0.2, verbose=True)
 
 epoch = 0
 loss = 0
@@ -110,7 +110,7 @@ for i in range(nb_epochs):
             input_ids.to(device), 
             attention_mask.to(device)
         )
-        current_loss = contrastive_loss(x_graph, x_text) + triplet_loss(x_graph, x_text)   
+        current_loss = contrastive_loss(x_graph, x_text) + triplet_loss(x_graph, x_text)
 
         optimizer.zero_grad()
         current_loss.backward()
