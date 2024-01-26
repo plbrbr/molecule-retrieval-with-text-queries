@@ -12,7 +12,7 @@ import torch
 
 if __name__ == '__main__':
     model_name = 'allenai/scibert_scivocab_cased'
-    nb_epochs = 5
+    nb_epochs = 20
     batch_size = 32
 
     if not (len(sys.argv) in [1, 4]):
