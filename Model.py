@@ -8,7 +8,7 @@ from transformers import AutoModel
 
 
 class GraphEncoder(nn.Module):
-    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels, n_gins=5, dropout_rate=0.):
+    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels, n_gins=5, dropout_rate=0.2):
         super(GraphEncoder, self).__init__()
         self.nhid = nhid
         self.nout = nout
@@ -20,9 +20,9 @@ class GraphEncoder(nn.Module):
             GINConv(
                 nn.Sequential(
                     nn.Linear(num_node_features, 2*graph_hidden_channels),
-                    nn.LeakyReLU(), nn.BatchNorm1d(2*graph_hidden_channels), nn.Dropout(dropout_rate),
+                    nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
                     nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels),
-                    nn.LeakyReLU(), nn.BatchNorm1d(2*graph_hidden_channels), nn.Dropout(dropout_rate),
+                    nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
                     nn.Linear(2*graph_hidden_channels, graph_hidden_channels),
                     nn.LeakyReLU(), nn.Dropout(dropout_rate),
                 ), train_eps=True)
@@ -32,9 +32,9 @@ class GraphEncoder(nn.Module):
                 GINConv(
                     nn.Sequential(
                         nn.Linear(graph_hidden_channels, 2*graph_hidden_channels),
-                        nn.LeakyReLU(), nn.BatchNorm1d(2*graph_hidden_channels), nn.Dropout(dropout_rate),
+                        nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
                         nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels),
-                        nn.LeakyReLU(), nn.BatchNorm1d(2*graph_hidden_channels), nn.Dropout(dropout_rate),
+                        nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
                         nn.Linear(2*graph_hidden_channels, graph_hidden_channels),
                         nn.LeakyReLU(), nn.Dropout(dropout_rate),
                     ), train_eps=True)
@@ -43,18 +43,18 @@ class GraphEncoder(nn.Module):
             GINConv(
                 nn.Sequential(
                     nn.Linear(graph_hidden_channels, 2*graph_hidden_channels),
-                    nn.LeakyReLU(), nn.BatchNorm1d(2*graph_hidden_channels), nn.Dropout(dropout_rate),
+                    nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
                     nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels),
-                    nn.LeakyReLU(), nn.BatchNorm1d(2*graph_hidden_channels), nn.Dropout(dropout_rate),
+                    nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
                     nn.Linear(2*graph_hidden_channels, graph_hidden_channels), 
                     nn.LeakyReLU(), nn.Dropout(dropout_rate),
                 ), train_eps=True)
         )
         self.last_linear = nn.Sequential(
             nn.Linear(graph_hidden_channels, nhid),
-            nn.LeakyReLU(), nn.BatchNorm1d(nhid), nn.Dropout(dropout_rate),
+            nn.BatchNorm1d(nhid), nn.LeakyReLU(), nn.Dropout(dropout_rate),
             nn.Linear(nhid, nhid),
-            nn.LeakyReLU(), nn.BatchNorm1d(nhid), nn.Dropout(dropout_rate),
+            nn.BatchNorm1d(nhid), nn.LeakyReLU(), nn.Dropout(dropout_rate),
             nn.Linear(nhid, nout),
         )
 
@@ -69,16 +69,14 @@ class GraphEncoder(nn.Module):
         return x
     
 class TextEncoder(nn.Module):
-    def __init__(self, model_name, nout):
+    def __init__(self, model_name, nout, dropout_rate=0.2):
         self.d_hidden = 768
         self.d_out = nout
         super(TextEncoder, self).__init__()
         self.bert = AutoModel.from_pretrained(model_name)
         self.linear = nn.Sequential(
             nn.Linear(self.d_hidden, self.d_out),
-            nn.BatchNorm1d(self.d_out), nn.LeakyReLU(),
-            nn.Linear(self.d_out, self.d_out),
-            nn.BatchNorm1d(self.d_out), nn.LeakyReLU(),
+            nn.LeakyReLU(), nn.Dropout(dropout_rate),
             nn.Linear(self.d_out, self.d_out)
         )
         

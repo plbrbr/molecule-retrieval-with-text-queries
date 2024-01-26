@@ -32,9 +32,9 @@ train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, nu
 model = Model(
     model_name=model_name, 
     num_node_features=300, 
-    nout=1024, # nout = bert model hidden dim
-    nhid=1024, 
-    graph_hidden_channels=1024
+    nout=512, # nout = bert model hidden dim
+    nhid=512, 
+    graph_hidden_channels=512
 )
 
 # checkpoint = torch.load("./model.pt")
@@ -52,12 +52,7 @@ optimizer = optim.AdamW(
     betas=(0.9, 0.999),
     weight_decay=0.01
 )
-lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(
-    optimizer=optimizer, 
-    gamma=0.955,
-    last_epoch=-1,
-    verbose=True,
-)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=3, factor=0.2, verbose=True)
 
 epoch = 0
 loss = 0
@@ -83,7 +78,7 @@ for i in range(nb_epochs):
             attention_mask.to(device)
         )
         contrast_loss = contrastive_loss(x_graph, x_text)
-        trip_loss = 5.0 * triplet_loss(x_graph, x_text)
+        trip_loss = triplet_loss(x_graph, x_text)
         current_loss = contrast_loss + trip_loss
         optimizer.zero_grad()
         current_loss.backward()
