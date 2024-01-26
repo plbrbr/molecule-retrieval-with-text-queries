@@ -45,14 +45,14 @@ model.to(device)
 
 optimizer = optim.AdamW(
     [
-        {'params': model.graph_encoder.parameters(), 'lr': 1e-4},
-        {'params': model.text_encoder.linear.parameters(), 'lr': 1e-4},
-        {'params': model.text_encoder.bert.parameters(), 'lr': 2e-5}
+        {'params': model.graph_encoder.parameters(), 'lr': 4e-4},
+        {'params': model.text_encoder.linear.parameters(), 'lr': 4e-4},
+        {'params': model.text_encoder.bert.parameters(), 'lr': 8e-5}
     ],
     betas=(0.9, 0.999),
     weight_decay=0.01
 )
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=3, factor=0.2, verbose=True)
+lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=3, factor=0.2, verbose=True)
 
 epoch = 0
 loss = 0
@@ -92,7 +92,7 @@ for i in range(nb_epochs):
                                                                         time2 - time1, loss/printEvery, trip_loss.item()))
             losses.append(loss)
             loss = 0
-    lr_scheduler.step()
+    lr_scheduler.step(i+1)
     model.eval()
     graph_embeddings, text_embeddings = [], []
     val_loss = 0

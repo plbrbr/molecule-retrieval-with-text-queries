@@ -52,9 +52,9 @@ class GraphEncoder(nn.Module):
         )
         self.last_linear = nn.Sequential(
             nn.Linear(graph_hidden_channels, nhid),
-            nn.BatchNorm1d(nhid), nn.LeakyReLU(), nn.Dropout(dropout_rate),
+            nn.LeakyReLU(), nn.Dropout(dropout_rate),
             nn.Linear(nhid, nhid),
-            nn.BatchNorm1d(nhid), nn.LeakyReLU(), nn.Dropout(dropout_rate),
+            nn.LeakyReLU(), nn.Dropout(dropout_rate),
             nn.Linear(nhid, nout),
         )
 
