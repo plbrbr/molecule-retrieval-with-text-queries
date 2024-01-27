@@ -11,7 +11,7 @@ from torch import optim
 import time
 import os
 
-model_name = 'bert-base-uncased'
+model_name = 'allenai/scibert_scivocab_uncased'
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
 val_dataset = GraphTextDataset(root='./data/', gt=gt, split='val', tokenizer=tokenizer)
