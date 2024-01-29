@@ -32,9 +32,9 @@ train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, nu
 model = Model(
     model_name=model_name, 
     num_node_features=300, 
-    nout=512, # nout = bert model hidden dim
-    nhid=512, 
-    graph_hidden_channels=512
+    nout=768, # nout = bert model hidden dim
+    nhid=1024, 
+    graph_hidden_channels=1024
 )
 
 # checkpoint = torch.load("./model.pt")
@@ -52,7 +52,7 @@ optimizer = optim.AdamW(
     betas=(0.9, 0.999),
     weight_decay=0.01
 )
-lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=3, factor=0.2, verbose=True)
+lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2, factor=0.8, verbose=True)
 
 epoch = 0
 loss = 0
@@ -92,7 +92,7 @@ for i in range(nb_epochs):
                                                                         time2 - time1, loss/printEvery, trip_loss.item()))
             losses.append(loss)
             loss = 0
-    lr_scheduler.step(i+1)
+
     model.eval()
     graph_embeddings, text_embeddings = [], []
     val_loss = 0
@@ -133,6 +133,7 @@ for i in range(nb_epochs):
             'loss': loss,
         }, save_path)
         print('checkpoint saved to: {}'.format(save_path))
+    lr_scheduler.step(val_accuracy)
 
 
 print('loading best model...')

@@ -5,7 +5,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
 CE = torch.nn.CrossEntropyLoss()
-def contrastive_loss(x1, x2):
+def contrastive_loss(x1, x2, tau=0.1):
+    logits = F.cosine_similarity(x1[:, None, :], x2[None, :, :], dim=2)/tau
+    #logits = torch.matmul(x1, torch.transpose(x2, 0, 1))
     logits = torch.matmul(x1, torch.transpose(x2, 0, 1))
     #logits = torch.sum((x1[:, None, :] - x2[None, :, :])**2, dim=2)
     labels = torch.arange(logits.shape[0], device=x1.device)
