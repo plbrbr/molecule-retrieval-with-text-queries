@@ -14,7 +14,8 @@ import time
 import os
 
 #model_name = 'bert-base-uncased'
-model_name = 'allenai/scibert_scivocab_uncased'
+#model_name = 'allenai/scibert_scivocab_uncased'
+model_name = "thenlper/gte-base"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
 val_dataset = GraphTextDataset(root='./data/', gt=gt, split='val', tokenizer=tokenizer)
@@ -24,7 +25,6 @@ device = torch.device("cuda")
 
 nb_epochs = 100
 batch_size = 128
-learning_rate = 2e-6
 
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
@@ -36,6 +36,10 @@ model = Model(
     nhid=1024, 
     graph_hidden_channels=1024
 )
+
+gnn_checkpoint = torch.load("./gnn_pretrained.pt")
+model.graph_encoder.load_state_dict(gnn_checkpoint['model_state_dict'])
+del gnn_checkpoint
 
 # checkpoint = torch.load("./model.pt")
 # model.load_state_dict(checkpoint['model_state_dict'])
