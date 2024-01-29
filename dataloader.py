@@ -6,6 +6,99 @@ from torch_geometric.data import Data
 from torch.utils.data import Dataset as TorchDataset
 import pandas as pd
 
+from graph_augmentation import *
+
+class PreTrainGraphDataset(Dataset):
+    def __init__(self, root, gt, split, augmentation='random', augmentation_ratio=0.2, transform=None, pre_transform=None):
+        self.root = root
+        self.gt = gt
+        self.split = split
+        self.augmentation = augmentation
+        self.augmentation_ratio = augmentation_ratio
+        self.description = pd.read_csv(os.path.join(self.root, split + '.tsv'), sep='\t', header=None)   
+        self.description = self.description.set_index(0).to_dict()
+        self.cids = list(self.description[1].keys()) 
+
+        self.idx_to_cid = {idx: cid for idx, cid in enumerate(self.cids)}
+        super(GraphTextDataset, self).__init__(root, transform, pre_transform)
+
+    @property
+    def raw_file_names(self):
+        return [str(cid) + ".graph" for cid in self.cids]
+
+    @property
+    def processed_file_names(self):
+        return ['data_{}.pt'.format(cid) for cid in self.cids]
+    
+    @property
+    def raw_dir(self) -> str:
+        return osp.join(self.root, 'raw')
+
+    @property
+    def processed_dir(self) -> str:
+        return osp.join(self.root, 'pretrain_processed/', self.split)
+
+    def download(self):
+        pass
+        
+    def process_graph(self, raw_path):
+      edge_index  = []
+      x = []
+      with open(raw_path, 'r') as f:
+        next(f)
+        for line in f: 
+          if line != "\n":
+            edge = *map(int, line.split()), 
+            edge_index.append(edge)
+          else:
+            break
+        next(f)
+        for line in f: #get mol2vec features:
+          substruct_id = line.strip().split()[-1]
+          if substruct_id in self.gt.keys():
+            x.append(self.gt[substruct_id])
+          else:
+            x.append(self.gt['UNK'])
+        return torch.LongTensor(edge_index).T, torch.FloatTensor(x)
+
+    def process(self):      
+        for raw_path in self.raw_paths:
+            cid = int(raw_path.split('/')[-1][:-6])
+            edge_index, x = self.process_graph(raw_path)
+            data = Data(x=x, edge_index=edge_index)
+
+            torch.save(data, osp.join(self.processed_dir, 'data_{}.pt'.format(cid)))
+
+    def len(self):
+        return len(self.processed_file_names)
+    
+    @staticmethod
+    def apply_augmentation(augmentation, data, augmentation_ratio):
+        if augmentation == 'drop_nodes':
+            data = drop_nodes(data, augmentation_ratio)
+        elif augmentation == 'permute_edges':
+            data = permute_edges(data, augmentation_ratio)
+        elif augmentation == 'mask_nodes':
+            data = mask_nodes(data, augmentation_ratio)
+        elif augmentation == 'subgraph':
+            data = subgraph(data, augmentation_ratio)
+        elif augmentation == 'none':
+            pass
+        else:
+            raise NotImplementedError
+        return data
+
+    def get(self, idx):
+        data = torch.load(osp.join(self.processed_dir, 'data_{}.pt'.format(self.idx_to_cid[idx])))
+
+        if self.augmentation == 'random':
+            choice = np.random.choice(['subgraph', 'drop_nodes'], 1)[0]
+            data = self.apply_augmentation(choice, data, self.augmentation_ratio)
+        else:
+            data = self.apply_augmentation(self.augmentation, data, self.augmentation_ratio)
+        
+        return data
+
 class GraphTextDataset(Dataset):
     def __init__(self, root, gt, split, tokenizer=None, transform=None, pre_transform=None):
         self.root = root

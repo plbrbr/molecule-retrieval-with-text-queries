@@ -20,7 +20,7 @@ class GraphEncoder(nn.Module):
             GINConv(
                 nn.Sequential(
                     nn.Linear(num_node_features, 2*graph_hidden_channels),
-                    nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
+                    nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(),
                     nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels),
                     nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
                     nn.Linear(2*graph_hidden_channels, graph_hidden_channels),
@@ -32,7 +32,7 @@ class GraphEncoder(nn.Module):
                 GINConv(
                     nn.Sequential(
                         nn.Linear(graph_hidden_channels, 2*graph_hidden_channels),
-                        nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
+                        nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(),
                         nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels),
                         nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
                         nn.Linear(2*graph_hidden_channels, graph_hidden_channels),
