@@ -20,7 +20,7 @@ class PreTrainGraphDataset(Dataset):
         self.cids = list(self.description[1].keys()) 
 
         self.idx_to_cid = {idx: cid for idx, cid in enumerate(self.cids)}
-        super(GraphTextDataset, self).__init__(root, transform, pre_transform)
+        super(PreTrainGraphDataset, self).__init__(root, transform, pre_transform)
 
     @property
     def raw_file_names(self):
@@ -90,12 +90,13 @@ class PreTrainGraphDataset(Dataset):
 
     def get(self, idx):
         data = torch.load(osp.join(self.processed_dir, 'data_{}.pt'.format(self.idx_to_cid[idx])))
-
-        if self.augmentation == 'random':
-            choice = np.random.choice(['subgraph', 'drop_nodes'], 1)[0]
-            data = self.apply_augmentation(choice, data, self.augmentation_ratio)
-        else:
-            data = self.apply_augmentation(self.augmentation, data, self.augmentation_ratio)
+        augmentation = self.augmentation
+        if augmentation == 'random':
+            augmentation = np.random.choice(['subgraph', 'drop_nodes'], 1)[0]
+        try:
+            data = self.apply_augmentation(augmentation, data, self.augmentation_ratio)
+        except:
+            data = data 
         
         return data
 

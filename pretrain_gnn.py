@@ -11,7 +11,6 @@ import os
 from copy import deepcopy
 
 gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
-val_dataset = PreTrainGraphDataset(root='./data/', gt=gt, split='val') 
 train_dataset = PreTrainGraphDataset(root='./data/', gt=gt, split='train')
 
 train_dataset1 = train_dataset.shuffle()
@@ -20,10 +19,9 @@ train_dataset2 = deepcopy(train_dataset1)
 device = torch.device("cuda")
 
 nb_epochs = 100
-batch_size = 64
+batch_size = 128
 learning_rate = 2e-4
 
-val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 train_loader1 = DataLoader(train_dataset1, batch_size=batch_size, shuffle=False, num_workers=4)
 train_loader2 = DataLoader(train_dataset2, batch_size=batch_size, shuffle=False, num_workers=4)
 
@@ -66,7 +64,7 @@ for i in range(nb_epochs):
         optimizer.zero_grad()
         current_loss.backward()
         optimizer.step()
-        loss += current_loss.item()
+        loss += current_loss.detach().cpu().item()
 
         count_iter += 1
         if count_iter % printEvery == 0:
