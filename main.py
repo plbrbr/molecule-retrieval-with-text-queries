@@ -32,9 +32,9 @@ train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, nu
 model = Model(
     model_name=model_name, 
     num_node_features=300, 
-    nout=768, # nout = bert model hidden dim
-    nhid=1024, 
-    graph_hidden_channels=1024
+    nout=512, # nout = bert model hidden dim
+    nhid=512, 
+    graph_hidden_channels=512
 )
 
 gnn_checkpoint = torch.load("./gnn_pretrained.pt")
