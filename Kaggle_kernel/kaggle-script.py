@@ -56,7 +56,7 @@ if __name__ == '__main__':
         x2_negatives = x1[torch.argmax(distances, dim=0)]
         return TML(x1, x2, x1_negatives) + TML(x2, x1, x2_negatives)
 
-    model_name = 'allenai/scibert_scivocab_cased'
+    model_name = 'thenlper/gte-base'
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     gt = np.load("../input/KAGGLE-PBALMA/data/token_embedding_dict.npy", allow_pickle=True)[()]
     val_dataset = GraphTextDataset(root='../input/KAGGLE-PBALMA/data/', gt=gt, split='val', tokenizer=tokenizer)

@@ -15,7 +15,7 @@ pip install -r requirements.txt
 ## New training session
 
 ```bash
-sh scripts/prepare_for_run.sh model_name nb_epochs batch_size
+sh scripts/prepare_for_train.sh model_name nb_epochs batch_size
 # wait until dataset is loaded on Kaggle
 sh scripts/train.sh
 # wait until run finished
