@@ -57,7 +57,7 @@ saveEvery = 50
 for epoch in range(1, nb_epochs+1):
     print(f"-----EPOCH{epoch}-----")
     model.train()
-    for iter, graph_batch1, graph_batch2 in enumerate(zip(train_loader1, train_loader2)):
+    for iter, (graph_batch1, graph_batch2) in enumerate(zip(train_loader1, train_loader2)):
         x_graph1 = model(graph_batch1.to(device))
         x_graph2 = model(graph_batch2.to(device))
 
