@@ -96,7 +96,7 @@ for epoch in range(1, nb_epochs+1):
         current_loss = current_loss.item()
         loss += current_loss
 
-        writer.add_scalar("train/loss", current_loss, n_iter)
+        writer.add_scalars("loss", {"train": current_loss}, n_iter)
         writer.add_scalar("train/lr", lr_scheduler.get_last_lr()[0], n_iter)
 
         if n_iter % printEvery == 0:
@@ -135,7 +135,7 @@ for epoch in range(1, nb_epochs+1):
     y_true = np.eye(similarity.shape[0])
     val_accuracy = label_ranking_average_precision_score(y_true, similarity)
 
-    writer.add_scalar("test/loss", val_loss, len(train_loader) * epoch)
+    writer.add_scalars("loss", {"test": val_loss}, len(train_loader) * epoch)
     writer.add_scalar("test/score", val_accuracy, len(train_loader) * epoch)
 
     best_validation_accuracy = max(best_validation_accuracy, val_accuracy)
