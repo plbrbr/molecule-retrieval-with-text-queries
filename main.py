@@ -50,9 +50,7 @@ model.to(device)
 
 optimizer = optim.AdamW(
     [
-        {'params': model.graph_encoder.parameters(), 'lr': 4e-4},
-        {'params': model.text_encoder.linear.parameters(), 'lr': 4e-4},
-        {'params': model.text_encoder.bert.parameters(), 'lr': 8e-5}
+        {'params': model.parameters(), 'lr': 4e-4},
     ],
     betas=(0.9, 0.999),
     weight_decay=0.01
