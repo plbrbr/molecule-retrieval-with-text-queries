@@ -58,6 +58,7 @@ for epoch in range(1, nb_epochs+1):
     print(f"-----EPOCH{epoch}-----")
     model.train()
     for iter, (graph_batch1, graph_batch2) in enumerate(zip(train_loader1, train_loader2)):
+        n_iter = iter * epoch
         x_graph1 = model(graph_batch1.to(device))
         x_graph2 = model(graph_batch2.to(device))
 
@@ -68,12 +69,12 @@ for epoch in range(1, nb_epochs+1):
         current_loss = current_loss.detach().cpu().item()
         loss += current_loss
 
-        writer.add_scalar("train/loss", current_loss, iter * epoch)
+        writer.add_scalar("train/loss", current_loss, n_iter)
 
-        if iter % printEvery == 0:
+        if n_iter % printEvery == 0:
             loss = loss / printEvery
             time2 = time.time()
-            print(f"Iteration: {iter}, Time: {(time2 - time1):.4f} s, training loss: {(loss):.4f}")
+            print(f"Iteration: {n_iter}, Time: {(time2 - time1):.4f} s, training loss: {(loss):.4f}")
             losses.append(loss)
             loss = 0
 
