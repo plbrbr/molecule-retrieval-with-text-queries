@@ -97,7 +97,7 @@ for epoch in range(1, nb_epochs+1):
         loss += current_loss
 
         writer.add_scalar("train/loss", current_loss, n_iter)
-        writer.add_scalar("train/lr", lr_scheduler.get_last_lr(), n_iter)
+        writer.add_scalar("train/lr", lr_scheduler.get_last_lr()[0], n_iter)
 
         if n_iter % printEvery == 0:
             loss = loss / printEvery
