@@ -21,7 +21,7 @@ train_dataset2 = deepcopy(train_dataset1)
 device = torch.device("cuda")
 
 nb_epochs = 200
-batch_size = 128
+batch_size = 1024
 learning_rate = 2e-4
 
 train_loader1 = DataLoader(train_dataset1, batch_size=batch_size, shuffle=False, num_workers=4)
