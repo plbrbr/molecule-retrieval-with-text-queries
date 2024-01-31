@@ -75,11 +75,11 @@ for i in range(nb_epochs):
             losses.append(loss)
             loss = 0
     
-    save_path = os.path.join('./', 'gnn_pretrained.pt')
-    torch.save({
-        'epoch': i,
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-        'loss': loss,
-    }, save_path)
-    print('checkpoint saved to: {}'.format(save_path))
+save_path = os.path.join('./', 'gnn_pretrained.pt')
+torch.save({
+    'epoch': i,
+    'model_state_dict': model.state_dict(),
+    'optimizer_state_dict': optimizer.state_dict(),
+    'loss': loss,
+}, save_path)
+print('checkpoint saved to: {}'.format(save_path))
