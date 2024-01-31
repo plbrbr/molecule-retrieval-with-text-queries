@@ -57,7 +57,8 @@ optimizer = optim.AdamW(
     betas=(0.9, 0.999),
     weight_decay=0.01
 )
-lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2, factor=0.8, verbose=True)
+#lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2, factor=0.8, verbose=True)
+lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=1e-3, steps_per_epoch=len(train_loader), epochs=nb_epochs)
 
 epoch = 0
 loss = 0
@@ -89,6 +90,8 @@ for i in range(nb_epochs):
         current_loss.backward()
         optimizer.step()
         loss += current_loss.item()
+        
+        lr_scheduler.step()
 
         count_iter += 1
         if count_iter % printEvery == 0:
@@ -138,8 +141,6 @@ for i in range(nb_epochs):
             'loss': loss,
         }, save_path)
         print('checkpoint saved to: {}'.format(save_path))
-    lr_scheduler.step(val_accuracy)
-
 
 print('loading best model...')
 checkpoint = torch.load(save_path)
