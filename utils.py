@@ -47,10 +47,13 @@ def normalise_embeddings_using_train(gt):
     description = pd.read_csv("./data/train.tsv", sep='\t', header=None)   
     description = description.set_index(0).to_dict()
     train_cids = list(description[1].keys())
-    x_train = [gt[cid] for cid in train_cids]
+    x_train = [gt[cid] if cid in gt else gt["UNK"] for cid in train_cids]
     x_train = np.array(x_train)
-    mean = np.mean(x_train, axis=1)
-    std = np.std(x_train, axis=1)
+    mean = np.mean(x_train, axis=0)
+    std = np.std(x_train, axis=0)
+    std[std == 0.0] = 1.0
+    #print("mean", mean)
+    #print("std", std)
     for cid in gt:
         gt[cid] = (gt[cid] - mean) / std
     return gt

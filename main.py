@@ -56,7 +56,7 @@ optimizer = optim.AdamW(
     weight_decay=0.01
 )
 #lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2, factor=0.8, verbose=True)
-lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=1e-3, steps_per_epoch=len(train_loader), epochs=nb_epochs)
+lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=2e-4, steps_per_epoch=len(train_loader), epochs=nb_epochs)
 
 epoch = 0
 loss = 0

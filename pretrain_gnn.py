@@ -19,7 +19,7 @@ train_dataset2 = deepcopy(train_dataset1)
 
 device = torch.device("cuda")
 
-nb_epochs = 100
+nb_epochs = 200
 batch_size = 128
 learning_rate = 2e-4
 
