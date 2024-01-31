@@ -52,7 +52,7 @@ loss = 0
 losses = []
 time1 = time.time()
 printEvery = 50
-saveEvery = 10
+saveEvery = 50
 
 for epoch in range(1, nb_epochs+1):
     print(f"-----EPOCH{epoch}-----")
@@ -77,8 +77,8 @@ for epoch in range(1, nb_epochs+1):
             losses.append(loss)
             loss = 0
 
-        if iter % saveEvery == 0:  
-            save_path = f"./gnn_pretrained_{iter//saveEvery}.pt"
+        if iter > 0 and iter % saveEvery == 0:  
+            save_path = f"./gnn_pretrained_{iter}.pt"
             torch.save({
                 'epoch': nb_epochs,
                 'model_state_dict': model.state_dict(),
