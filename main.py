@@ -9,9 +9,12 @@ import numpy as np
 from transformers import AutoTokenizer
 import torch
 import torch.nn.functional as F
+from torch.utils.tensorboard import SummaryWriter
 from torch import optim
 import time
 import os
+
+writer = SummaryWriter()
 
 #model_name = 'bert-base-uncased'
 #model_name = 'allenai/scibert_scivocab_uncased'
@@ -56,20 +59,23 @@ optimizer = optim.AdamW(
     weight_decay=0.01
 )
 #lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2, factor=0.8, verbose=True)
-lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=2e-4, steps_per_epoch=len(train_loader), epochs=nb_epochs)
+lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
+    optimizer, 
+    max_lr=2e-4, 
+    steps_per_epoch=len(train_loader), 
+    epochs=nb_epochs
+)
 
-epoch = 0
 loss = 0
 losses = []
-count_iter = 0
 time1 = time.time()
 printEvery = 50
 best_validation_accuracy = 0.0
 
-for i in range(nb_epochs):
-    print('-----EPOCH{}-----'.format(i+1))
+for epoch in range(1, nb_epochs+1):
+    print('-----EPOCH{}-----'.format(epoch))
     model.train()
-    for batch in train_loader:
+    for iter, batch in enumerate(train_loader):
         input_ids = batch.input_ids
         batch.pop('input_ids')
         attention_mask = batch.attention_mask
@@ -90,11 +96,12 @@ for i in range(nb_epochs):
         loss += current_loss.item()
 
         lr_scheduler.step()
+        writer.add_scalar("train/loss", loss, iter * epoch)
+        writer.add_scalar("train/lr", lr_scheduler.get_last_lr(), iter * epoch)
 
-        count_iter += 1
-        if count_iter % printEvery == 0:
+        if iter % printEvery == 0:
             time2 = time.time()
-            print("Iteration: {0}, Time: {1:.4f} s, training loss: {2:.4f}".format(count_iter,
+            print("Iteration: {0}, Time: {1:.4f} s, training loss: {2:.4f}".format(iter,
                                                                         time2 - time1, loss/printEvery))
             losses.append(loss)
             loss = 0
@@ -120,18 +127,24 @@ for i in range(nb_epochs):
 
             current_loss = contrastive_loss(x_graph, x_text)   
             val_loss += current_loss.item()
+    val_loss = val_loss/len(val_loader)
+
     graph_embeddings = torch.vstack(graph_embeddings)
     text_embeddings = torch.vstack(text_embeddings)
     similarity = cosine_similarity(text_embeddings.cpu(), graph_embeddings.cpu())
     y_true = np.eye(similarity.shape[0])
     val_accuracy = label_ranking_average_precision_score(y_true, similarity)
+
+    writer.add_scalar("test/loss", val_loss, len(train_loader) * epoch)
+    writer.add_scalar("test/score", val_accuracy, len(train_loader) * epoch)
+
     best_validation_accuracy = max(best_validation_accuracy, val_accuracy)
-    print(f"-----EPOCH{i+1}----- done.  Validation loss: {val_loss/len(val_loader):.3f}, Score: {val_accuracy:.3f}")
+    print(f"-----EPOCH{epoch}----- done.  Validation loss: {val_loss:.3f}, Score: {val_accuracy:.3f}")
     if best_validation_accuracy == val_accuracy:
         print('validation score improved saving checkpoint...')
         save_path = os.path.join('./', 'model.pt')
         torch.save({
-            'epoch': i,
+            'epoch': epoch,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'validation_loss': val_loss,
@@ -139,33 +152,6 @@ for i in range(nb_epochs):
             'loss': loss,
         }, save_path)
         print('checkpoint saved to: {}'.format(save_path))
-
-print('loading best model...')
-checkpoint = torch.load(save_path)
-model.load_state_dict(checkpoint['model_state_dict'])
-model.eval()
-
-graph_model = model.get_graph_encoder()
-text_model = model.get_text_encoder()
-
-test_cids_dataset = GraphDataset(root='./data/', gt=gt, split='test_cids')
-test_text_dataset = TextDataset(file_path='./data/test_text.txt', tokenizer=tokenizer)
-
-idx_to_cid = test_cids_dataset.get_idx_to_cid()
-
-test_loader = DataLoader(test_cids_dataset, batch_size=batch_size, shuffle=False)
-
-graph_embeddings = []
-for batch in test_loader:
-    for output in graph_model(batch.to(device)):
-        graph_embeddings.append(output.tolist())
-
-test_text_loader = TorchDataLoader(test_text_dataset, batch_size=batch_size, shuffle=False)
-text_embeddings = []
-for batch in test_text_loader:
-    for output in text_model(batch['input_ids'].to(device), 
-                             attention_mask=batch['attention_mask'].to(device)):
-        text_embeddings.append(output.tolist())
-
-similarity = cosine_similarity(text_embeddings, graph_embeddings)
-prepare_submission(similarity, "submissions/submission.csv")
+    
+writer.flush()
+writer.close()

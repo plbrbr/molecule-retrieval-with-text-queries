@@ -7,3 +7,4 @@ pandas
 kaggle
 pykeops
 geomloss[full]
+tensorboard
