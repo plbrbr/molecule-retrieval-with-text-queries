@@ -77,15 +77,15 @@ for epoch in range(1, nb_epochs+1):
             losses.append(loss)
             loss = 0
 
-        if iter > 0 and iter % saveEvery == 0:  
-            save_path = f"./gnn_pretrained_{iter}.pt"
-            torch.save({
-                'epoch': nb_epochs,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'loss': losses,
-            }, save_path)
-            print(f"checkpoint saved to: {save_path}")
+    if epoch % saveEvery == 0:  
+        save_path = f"./gnn_pretrained_{epoch}.pt"
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': losses,
+        }, save_path)
+        print(f"checkpoint saved to: {save_path}")
 
 writer.flush()
 writer.close()
