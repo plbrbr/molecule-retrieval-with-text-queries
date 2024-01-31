@@ -73,6 +73,7 @@ for epoch in range(1, nb_epochs+1):
     print(f"-----EPOCH{epoch}-----")
     model.train()
     for iter, batch in enumerate(train_loader):
+        n_iter = len(train_loader) * (epoch - 1) + iter
         input_ids = batch.input_ids
         batch.pop('input_ids')
         attention_mask = batch.attention_mask
@@ -95,13 +96,13 @@ for epoch in range(1, nb_epochs+1):
         current_loss = current_loss.item()
         loss += current_loss
 
-        writer.add_scalar("train/loss", current_loss, iter * epoch)
-        writer.add_scalar("train/lr", lr_scheduler.get_last_lr(), iter * epoch)
+        writer.add_scalar("train/loss", current_loss, n_iter)
+        writer.add_scalar("train/lr", lr_scheduler.get_last_lr(), n_iter)
 
-        if iter % printEvery == 0:
-            loss = loss/printEvery
+        if n_iter % printEvery == 0:
+            loss = loss / printEvery
             time2 = time.time()
-            print(f"Iteration: {iter}, Time: {(time2 - time1):.4f} s, training loss: {loss:.4f}")
+            print(f"Iteration: {n_iter}, Time: {(time2 - time1):.4f} s, training loss: {loss:.4f}")
             losses.append(loss)
             loss = 0
 
@@ -126,7 +127,7 @@ for epoch in range(1, nb_epochs+1):
 
             current_loss = contrastive_loss(x_graph, x_text)   
             val_loss += current_loss.item()
-    val_loss = val_loss/len(val_loader)
+    val_loss = val_loss / len(val_loader)
 
     graph_embeddings = torch.vstack(graph_embeddings)
     text_embeddings = torch.vstack(text_embeddings)
