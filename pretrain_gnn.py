@@ -7,7 +7,6 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 from torch import optim
 import time
-import os
 from copy import deepcopy
 
 writer = SummaryWriter()
@@ -49,16 +48,14 @@ optimizer = optim.AdamW(
     weight_decay=0.01
 )
 
-epoch = 0
 loss = 0
-current_loss = 0
 losses = []
-count_iter = 0
 time1 = time.time()
 printEvery = 50
+saveEvery = 10
 
 for epoch in range(1, nb_epochs+1):
-    print('-----EPOCH{}-----'.format(epoch))
+    print(f"-----EPOCH{epoch}-----")
     model.train()
     for iter, graph_batch1, graph_batch2 in enumerate(zip(train_loader1, train_loader2)):
         x_graph1 = model(graph_batch1.to(device))
@@ -73,23 +70,22 @@ for epoch in range(1, nb_epochs+1):
 
         writer.add_scalar("train/loss", current_loss, iter * epoch)
 
-        count_iter += 1
-        if count_iter % printEvery == 0:
+        if iter % printEvery == 0:
+            loss = loss / printEvery
             time2 = time.time()
-            print("Iteration: {0}, Time: {1:.4f} s, training loss: {2:.4f}".format(count_iter,
-                                                                        time2 - time1, loss/printEvery))
+            print(f"Iteration: {iter}, Time: {(time2 - time1):.4f} s, training loss: {(loss):.4f}")
             losses.append(loss)
             loss = 0
-    
-save_path = os.path.join('./', 'gnn_pretrained.pt')
-torch.save({
-    'epoch': nb_epochs,
-    'model_state_dict': model.state_dict(),
-    'optimizer_state_dict': optimizer.state_dict(),
-    'loss': current_loss,
-}, save_path)
-print('checkpoint saved to: {}'.format(save_path))
 
+        if iter % saveEvery == 0:  
+            save_path = f"./gnn_pretrained_{iter//saveEvery}.pt"
+            torch.save({
+                'epoch': nb_epochs,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': losses,
+            }, save_path)
+            print(f"checkpoint saved to: {save_path}")
 
 writer.flush()
 writer.close()

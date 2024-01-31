@@ -1,6 +1,5 @@
-from dataloader import GraphTextDataset, GraphDataset, TextDataset
+from dataloader import GraphTextDataset
 from torch_geometric.data import DataLoader
-from torch.utils.data import DataLoader as TorchDataLoader
 from Model import Model
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.metrics import label_ranking_average_precision_score 
@@ -8,11 +7,12 @@ from utils import prepare_submission, contrastive_loss, normalise_embeddings_usi
 import numpy as np
 from transformers import AutoTokenizer
 import torch
-import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 from torch import optim
 import time
-import os
+
+nb_epochs = 50
+batch_size = 128
 
 writer = SummaryWriter()
 
@@ -26,9 +26,6 @@ val_dataset = GraphTextDataset(root='./data/', gt=gt, split='val', tokenizer=tok
 train_dataset = GraphTextDataset(root='./data/', gt=gt, split='train', tokenizer=tokenizer)
 
 device = torch.device("cuda")
-
-nb_epochs = 50
-batch_size = 128
 
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
@@ -73,7 +70,7 @@ printEvery = 50
 best_validation_accuracy = 0.0
 
 for epoch in range(1, nb_epochs+1):
-    print('-----EPOCH{}-----'.format(epoch))
+    print(f"-----EPOCH{epoch}-----")
     model.train()
     for iter, batch in enumerate(train_loader):
         input_ids = batch.input_ids
@@ -93,16 +90,18 @@ for epoch in range(1, nb_epochs+1):
         optimizer.zero_grad()
         current_loss.backward()
         optimizer.step()
-        loss += current_loss.item()
-
         lr_scheduler.step()
-        writer.add_scalar("train/loss", loss, iter * epoch)
+
+        current_loss = current_loss.item()
+        loss += current_loss
+
+        writer.add_scalar("train/loss", current_loss, iter * epoch)
         writer.add_scalar("train/lr", lr_scheduler.get_last_lr(), iter * epoch)
 
         if iter % printEvery == 0:
+            loss = loss/printEvery
             time2 = time.time()
-            print("Iteration: {0}, Time: {1:.4f} s, training loss: {2:.4f}".format(iter,
-                                                                        time2 - time1, loss/printEvery))
+            print(f"Iteration: {iter}, Time: {(time2 - time1):.4f} s, training loss: {loss:.4f}")
             losses.append(loss)
             loss = 0
 
@@ -141,8 +140,8 @@ for epoch in range(1, nb_epochs+1):
     best_validation_accuracy = max(best_validation_accuracy, val_accuracy)
     print(f"-----EPOCH{epoch}----- done.  Validation loss: {val_loss:.3f}, Score: {val_accuracy:.3f}")
     if best_validation_accuracy == val_accuracy:
-        print('validation score improved saving checkpoint...')
-        save_path = os.path.join('./', 'model.pt')
+        print("validation score improved saving checkpoint...")
+        save_path = "./model.pt"
         torch.save({
             'epoch': epoch,
             'model_state_dict': model.state_dict(),
@@ -151,7 +150,7 @@ for epoch in range(1, nb_epochs+1):
             'validation_accuracy': val_accuracy,
             'loss': loss,
         }, save_path)
-        print('checkpoint saved to: {}'.format(save_path))
+        print(f"checkpoint saved to: {save_path}")
     
 writer.flush()
 writer.close()
