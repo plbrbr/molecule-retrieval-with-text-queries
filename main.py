@@ -24,7 +24,7 @@ train_dataset = GraphTextDataset(root='./data/', gt=gt, split='train', tokenizer
 
 device = torch.device("cuda")
 
-nb_epochs = 100
+nb_epochs = 50
 batch_size = 128
 
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
@@ -90,7 +90,7 @@ for i in range(nb_epochs):
         current_loss.backward()
         optimizer.step()
         loss += current_loss.item()
-        
+
         lr_scheduler.step()
 
         count_iter += 1
