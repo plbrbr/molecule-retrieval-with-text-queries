@@ -4,11 +4,13 @@ from Model import GraphEncoder
 from utils import loss_cl, normalise_embeddings_using_train
 import numpy as np
 import torch
+from torch.utils.tensorboard import SummaryWriter
 from torch import optim
 import time
 import os
-
 from copy import deepcopy
+
+writer = SummaryWriter()
 
 gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
 gt = normalise_embeddings_using_train(gt)
@@ -49,15 +51,16 @@ optimizer = optim.AdamW(
 
 epoch = 0
 loss = 0
+current_loss = 0
 losses = []
 count_iter = 0
 time1 = time.time()
 printEvery = 50
 
-for i in range(nb_epochs):
-    print('-----EPOCH{}-----'.format(i+1))
+for epoch in range(1, nb_epochs+1):
+    print('-----EPOCH{}-----'.format(epoch))
     model.train()
-    for graph_batch1, graph_batch2 in zip(train_loader1, train_loader2):
+    for iter, graph_batch1, graph_batch2 in enumerate(zip(train_loader1, train_loader2)):
         x_graph1 = model(graph_batch1.to(device))
         x_graph2 = model(graph_batch2.to(device))
 
@@ -65,7 +68,10 @@ for i in range(nb_epochs):
         optimizer.zero_grad()
         current_loss.backward()
         optimizer.step()
-        loss += current_loss.detach().cpu().item()
+        current_loss = current_loss.detach().cpu().item()
+        loss += current_loss
+
+        writer.add_scalar("train/loss", current_loss, iter * epoch)
 
         count_iter += 1
         if count_iter % printEvery == 0:
@@ -77,9 +83,13 @@ for i in range(nb_epochs):
     
 save_path = os.path.join('./', 'gnn_pretrained.pt')
 torch.save({
-    'epoch': i,
+    'epoch': nb_epochs,
     'model_state_dict': model.state_dict(),
     'optimizer_state_dict': optimizer.state_dict(),
-    'loss': loss,
+    'loss': current_loss,
 }, save_path)
 print('checkpoint saved to: {}'.format(save_path))
+
+
+writer.flush()
+writer.close()
