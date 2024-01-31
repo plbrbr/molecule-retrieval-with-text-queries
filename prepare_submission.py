@@ -33,6 +33,8 @@ save_path = "./model.pt"
 print('loading best model...')
 checkpoint = torch.load(save_path)
 model.load_state_dict(checkpoint['model_state_dict'])
+
+model.to(device)
 model.eval()
 
 graph_model = model.get_graph_encoder()
