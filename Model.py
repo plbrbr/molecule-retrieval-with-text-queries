@@ -8,13 +8,11 @@ from transformers import AutoModel
 
 
 class GraphEncoder(nn.Module):
-    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels, n_gins=3, dropout_rate=0.2):
+    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels, n_gins=3, dropout_rate=0.1):
         super(GraphEncoder, self).__init__()
         self.nhid = nhid
         self.nout = nout
         self.dropout_rate = dropout_rate
-        self.LeakyReLU = nn.LeakyReLU()
-        self.ln = nn.LayerNorm((nout))
         self.gins = nn.ModuleList()
         self.gins.append(
             GINConv(
@@ -69,7 +67,7 @@ class GraphEncoder(nn.Module):
         return x
     
 class TextEncoder(nn.Module):
-    def __init__(self, model_name, nout, dropout_rate=0.2):
+    def __init__(self, model_name, nout, dropout_rate=0.1):
         self.d_hidden = 768
         self.d_out = nout
         super(TextEncoder, self).__init__()
