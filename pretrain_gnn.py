@@ -1,7 +1,7 @@
 from dataloader import PreTrainGraphDataset
 from torch_geometric.data import DataLoader
 from Model import GraphEncoder
-from utils import loss_cl
+from utils import loss_cl, normalise_embeddings_using_train
 import numpy as np
 import torch
 from torch import optim
@@ -11,6 +11,7 @@ import os
 from copy import deepcopy
 
 gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
+gt = normalise_embeddings_using_train(gt)
 train_dataset = PreTrainGraphDataset(root='./data/', gt=gt, split='train')
 
 train_dataset1 = train_dataset.shuffle()

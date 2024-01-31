@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader as TorchDataLoader
 from Model import Model
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.metrics import label_ranking_average_precision_score 
-from utils import prepare_submission, contrastive_loss, triplet_loss 
+from utils import prepare_submission, contrastive_loss, normalise_embeddings_using_train
 import numpy as np
 from transformers import AutoTokenizer
 import torch
@@ -18,6 +18,7 @@ import os
 model_name = "thenlper/gte-base"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
+gt = normalise_embeddings_using_train(gt)
 val_dataset = GraphTextDataset(root='./data/', gt=gt, split='val', tokenizer=tokenizer)
 train_dataset = GraphTextDataset(root='./data/', gt=gt, split='train', tokenizer=tokenizer)
 
@@ -82,8 +83,8 @@ for i in range(nb_epochs):
             attention_mask.to(device)
         )
         contrast_loss = contrastive_loss(x_graph, x_text)
-        trip_loss = triplet_loss(x_graph, x_text)
-        current_loss = contrast_loss + trip_loss
+        # trip_loss = triplet_loss(x_graph, x_text)
+        current_loss = contrast_loss # + trip_loss
         optimizer.zero_grad()
         current_loss.backward()
         optimizer.step()
@@ -92,8 +93,8 @@ for i in range(nb_epochs):
         count_iter += 1
         if count_iter % printEvery == 0:
             time2 = time.time()
-            print("Iteration: {0}, Time: {1:.4f} s, training loss: {2:.4f} {3:.4f}".format(count_iter,
-                                                                        time2 - time1, loss/printEvery, trip_loss.item()))
+            print("Iteration: {0}, Time: {1:.4f} s, training loss: {2:.4f}".format(count_iter,
+                                                                        time2 - time1, loss/printEvery))
             losses.append(loss)
             loss = 0
 

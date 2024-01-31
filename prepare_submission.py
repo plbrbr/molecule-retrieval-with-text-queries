@@ -3,7 +3,7 @@ from torch_geometric.data import DataLoader
 from torch.utils.data import DataLoader as TorchDataLoader
 from Model import Model
 from sklearn.metrics.pairwise import cosine_similarity
-from utils import prepare_submission, contrastive_loss
+from utils import prepare_submission, normalise_embeddings_using_train
 import numpy as np
 from transformers import AutoTokenizer
 import torch
@@ -11,37 +11,24 @@ from torch import optim
 import time
 import os
 
-model_name = 'allenai/scibert_scivocab_uncased'
+model_name = 'thenlper/gte-base'
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
-val_dataset = GraphTextDataset(root='./data/', gt=gt, split='val', tokenizer=tokenizer)
-train_dataset = GraphTextDataset(root='./data/', gt=gt, split='train', tokenizer=tokenizer)
+gt = normalise_embeddings_using_train(gt)
 
 device = torch.device("cuda")
 
-nb_epochs = 20
 batch_size = 128
-learning_rate = 2e-5
-
-val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
 model = Model(
     model_name=model_name, 
     num_node_features=300, 
-    nout=768, 
-    nhid=1024, 
-    graph_hidden_channels=1024
-).to(device) # nout = bert model hidden dim
-
-optimizer = optim.AdamW(
-    model.parameters(), 
-    lr=learning_rate,
-    betas=(0.9, 0.999),
-    weight_decay=0.01
+    nout=512, 
+    nhid=512, 
+    graph_hidden_channels=512
 )
 
-save_path = os.path.join('./', 'model.pt')
+save_path = "./model.pt"
 
 print('loading best model...')
 checkpoint = torch.load(save_path)
