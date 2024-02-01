@@ -20,23 +20,23 @@ train_dataset2 = deepcopy(train_dataset1)
 
 device = torch.device("cuda")
 
-nb_epochs = 200
-batch_size = 512
-learning_rate = 2e-4
+nb_epochs = 100
+batch_size = 1024
+learning_rate = 5e-5
 
-train_loader1 = DataLoader(train_dataset1, batch_size=batch_size, shuffle=False, num_workers=4)
-train_loader2 = DataLoader(train_dataset2, batch_size=batch_size, shuffle=False, num_workers=4)
+train_loader1 = DataLoader(train_dataset1, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
+train_loader2 = DataLoader(train_dataset2, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
 
 model = GraphEncoder(
     num_node_features=300, 
-    nout=512, # nout = bert model hidden dim
-    nhid=512, 
+    nout=1024, # nout = bert model hidden dim
+    nhid=1024, 
     graph_hidden_channels=512
 )
 
-# checkpoint = torch.load("./gnn_pretrained.pt")
-# model.load_state_dict(checkpoint['model_state_dict'])
-# del checkpoint
+checkpoint = torch.load("./gnn_pretrained_50.pt")
+model.load_state_dict(checkpoint['model_state_dict'])
+del checkpoint
 
 model.to(device)
 
@@ -54,18 +54,22 @@ time1 = time.time()
 printEvery = 50
 saveEvery = 50
 
+scaler = torch.cuda.amp.GradScaler()
+
 for epoch in range(1, nb_epochs+1):
     print(f"-----EPOCH{epoch}-----")
     model.train()
     for iter, (graph_batch1, graph_batch2) in enumerate(zip(train_loader1, train_loader2)):
-        n_iter = len(train_loader1) * (epoch - 1) + iter
-        x_graph1 = model(graph_batch1.to(device))
-        x_graph2 = model(graph_batch2.to(device))
-
-        current_loss = loss_cl(x_graph1, x_graph2)
         optimizer.zero_grad()
-        current_loss.backward()
-        optimizer.step()
+        n_iter = len(train_loader1) * (epoch - 1) + iter
+        with torch.cuda.amp.autocast(dtype=torch.bfloat16):
+            x_graph1 = model(graph_batch1.to(device))
+            x_graph2 = model(graph_batch2.to(device))
+            current_loss = loss_cl(x_graph1, x_graph2)
+
+        scaler.scale(current_loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
         current_loss = current_loss.detach().cpu().item()
         loss += current_loss
 

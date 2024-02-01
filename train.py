@@ -11,15 +11,15 @@ from torch.utils.tensorboard import SummaryWriter
 from torch import optim
 import time
 
-nb_epochs = 100
-batch_size = 200
-learning_rate = 2e-5
+nb_epochs = 20
+batch_size = 75
+learning_rate = 4e-4
 
 writer = SummaryWriter()
 
 #model_name = 'bert-base-uncased'
 #model_name = 'allenai/scibert_scivocab_uncased'
-model_name = "thenlper/gte-base"
+model_name = "thenlper/gte-large"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
 gt = normalise_embeddings_using_train(gt)
@@ -34,8 +34,8 @@ train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, nu
 model = Model(
     model_name=model_name, 
     num_node_features=300, 
-    nout=512, # nout = bert model hidden dim
-    nhid=512, 
+    nout=1024, # nout = bert model hidden dim
+    nhid=1024, 
     graph_hidden_channels=512
 )
 
@@ -59,7 +59,7 @@ optimizer = optim.AdamW(
 #lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2, factor=0.8, verbose=True)
 lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
     optimizer, 
-    max_lr=4e-4, 
+    max_lr=2e-4, 
     steps_per_epoch=len(train_loader), 
     epochs=nb_epochs
 )
@@ -76,6 +76,8 @@ for epoch in range(1, nb_epochs+1):
     print(f"-----EPOCH{epoch}-----")
     model.train()
     for iter, batch in enumerate(train_loader):
+        optimizer.zero_grad()
+
         n_iter = len(train_loader) * (epoch - 1) + iter + 1
         input_ids = batch.input_ids
         batch.pop('input_ids')
@@ -83,7 +85,7 @@ for epoch in range(1, nb_epochs+1):
         batch.pop('attention_mask')
         graph_batch = batch
 
-        with torch.cuda.amp.autocast(dtype=torch.float16):
+        with torch.cuda.amp.autocast(dtype=torch.bfloat16):
             x_graph, x_text = model(
                 graph_batch.to(device), 
                 input_ids.to(device), 
@@ -92,9 +94,8 @@ for epoch in range(1, nb_epochs+1):
             contrast_loss = contrastive_loss(x_graph, x_text)
         # trip_loss = triplet_loss(x_graph, x_text)
         current_loss = contrast_loss # + trip_loss
-        optimizer.zero_grad()
         scaler.scale(current_loss).backward()
-        #torch.nn.utils.clip_grad_value_(model.parameters(), 10)
+        #torch.nn.utils.clip_grad_value_(model.parameters(), 1)
         scaler.step(optimizer)
         scaler.update()
         lr_scheduler.step()

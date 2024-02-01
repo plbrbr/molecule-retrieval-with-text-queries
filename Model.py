@@ -8,7 +8,7 @@ from transformers import AutoModel
 
 
 class GraphEncoder(nn.Module):
-    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels, n_gins=3, dropout_rate=0.1):
+    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels, n_gins=3, dropout_rate=0.2):
         super(GraphEncoder, self).__init__()
         self.nhid = nhid
         self.nout = nout
@@ -44,12 +44,12 @@ class GraphEncoder(nn.Module):
                     nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
                     nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels, bias=False),
                     nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
-                    nn.Linear(2*graph_hidden_channels, graph_hidden_channels), 
+                    nn.Linear(2*graph_hidden_channels, nhid), 
                     nn.LeakyReLU(), nn.Dropout(dropout_rate),
                 ), train_eps=True)
         )
         self.last_linear = nn.Sequential(
-            nn.Linear(graph_hidden_channels, nhid),
+            nn.Linear(nhid, nhid),
             nn.LeakyReLU(), nn.Dropout(dropout_rate),
             nn.Linear(nhid, nhid),
             nn.LeakyReLU(), nn.Dropout(dropout_rate),
@@ -65,10 +65,14 @@ class GraphEncoder(nn.Module):
         x = global_mean_pool(x, batch)
         x = self.last_linear(x)
         return x
-    
+
+def average_pool(last_hidden_states, attention_mask):
+    last_hidden = last_hidden_states.masked_fill(~attention_mask[..., None].bool(), 0.0)
+    return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
+
 class TextEncoder(nn.Module):
-    def __init__(self, model_name, nout, dropout_rate=0.1):
-        self.d_hidden = 768
+    def __init__(self, model_name, nout, dropout_rate=0.2):
+        self.d_hidden = 1024
         self.d_out = nout
         super(TextEncoder, self).__init__()
         self.bert = AutoModel.from_pretrained(model_name)
@@ -79,10 +83,11 @@ class TextEncoder(nn.Module):
         )
         
     def forward(self, input_ids, attention_mask):
-        encoded_text = self.bert(input_ids, attention_mask=attention_mask)
-        #print(encoded_text.last_hidden_state.size())
-        return self.linear(torch.mean(encoded_text.last_hidden_state[:, 1:, :],
- dim=1))
+        outputs = self.bert(input_ids, attention_mask=attention_mask)
+        outputs = average_pool(outputs.last_hidden_state, attention_mask)
+        #return outputs
+        #return self.linear(torch.mean(outputs.last_hidden_state, dim=1))
+        return self.linear(outputs)
     
 class Model(nn.Module):
     def __init__(self, model_name, num_node_features, nout, nhid, graph_hidden_channels):
