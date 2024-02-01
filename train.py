@@ -11,8 +11,9 @@ from torch.utils.tensorboard import SummaryWriter
 from torch import optim
 import time
 
-nb_epochs = 50
-batch_size = 128
+nb_epochs = 100
+batch_size = 200
+learning_rate = 2e-5
 
 writer = SummaryWriter()
 
@@ -27,8 +28,8 @@ train_dataset = GraphTextDataset(root='./data/', gt=gt, split='train', tokenizer
 
 device = torch.device("cuda")
 
-val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
 
 model = Model(
     model_name=model_name, 
@@ -42,23 +43,23 @@ gnn_checkpoint = torch.load("./gnn_pretrained.pt")
 model.graph_encoder.load_state_dict(gnn_checkpoint['model_state_dict'])
 del gnn_checkpoint
 
-# checkpoint = torch.load("./model.pt")
-# model.load_state_dict(checkpoint['model_state_dict'])
-# del checkpoint
+#checkpoint = torch.load("./model.pt")
+#model.load_state_dict(checkpoint['model_state_dict'])
+#del checkpoint
 
 model.to(device)
 
 optimizer = optim.AdamW(
     [
-        {'params': model.parameters(), 'lr': 4e-4},
+        {'params': model.parameters(), 'lr': learning_rate},
     ],
     betas=(0.9, 0.999),
-    weight_decay=1e-3
+    weight_decay=1e-2
 )
 #lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2, factor=0.8, verbose=True)
 lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
     optimizer, 
-    max_lr=1e-3, 
+    max_lr=4e-4, 
     steps_per_epoch=len(train_loader), 
     epochs=nb_epochs
 )
@@ -69,28 +70,33 @@ time1 = time.time()
 printEvery = 50
 best_validation_accuracy = 0.0
 
+scaler = torch.cuda.amp.GradScaler()
+
 for epoch in range(1, nb_epochs+1):
     print(f"-----EPOCH{epoch}-----")
     model.train()
     for iter, batch in enumerate(train_loader):
-        n_iter = len(train_loader) * (epoch - 1) + iter
+        n_iter = len(train_loader) * (epoch - 1) + iter + 1
         input_ids = batch.input_ids
         batch.pop('input_ids')
         attention_mask = batch.attention_mask
         batch.pop('attention_mask')
         graph_batch = batch
-        
-        x_graph, x_text = model(
-            graph_batch.to(device), 
-            input_ids.to(device), 
-            attention_mask.to(device)
-        )
-        contrast_loss = contrastive_loss(x_graph, x_text)
+
+        with torch.cuda.amp.autocast(dtype=torch.float16):
+            x_graph, x_text = model(
+                graph_batch.to(device), 
+                input_ids.to(device), 
+                attention_mask.to(device)
+            )
+            contrast_loss = contrastive_loss(x_graph, x_text)
         # trip_loss = triplet_loss(x_graph, x_text)
         current_loss = contrast_loss # + trip_loss
         optimizer.zero_grad()
-        current_loss.backward()
-        optimizer.step()
+        scaler.scale(current_loss).backward()
+        #torch.nn.utils.clip_grad_value_(model.parameters(), 10)
+        scaler.step(optimizer)
+        scaler.update()
         lr_scheduler.step()
 
         current_loss = current_loss.item()
