@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 from torch_geometric.nn import GINConv
 from torch_geometric.nn import global_mean_pool
-from transformers import T5ForConditionalGeneration
+from transformers import AutoModel, T5ForConditionalGeneration
 
 
 class GraphEncoder(nn.Module):
@@ -72,7 +72,7 @@ def average_pool(last_hidden_states, attention_mask):
 
 class TextEncoderT5(nn.Module):
     def __init__(self, model_name, nout, dropout_rate=0.2):
-        self.d_hidden = 1024
+        self.d_hidden = 512
         self.d_out = nout
         super(TextEncoderT5, self).__init__()
         self.model = T5ForConditionalGeneration.from_pretrained(model_name)
@@ -83,7 +83,7 @@ class TextEncoderT5(nn.Module):
         )
         
     def forward(self, input_ids, attention_mask):
-        outputs = self.model(input_ids, attention_mask=attention_mask)
+        outputs = self.model.encoder(input_ids=input_ids, attention_mask=attention_mask)
         outputs = average_pool(outputs.last_hidden_state, attention_mask)
         #return outputs
         #return self.linear(torch.mean(outputs.last_hidden_state, dim=1))

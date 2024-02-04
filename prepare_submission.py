@@ -11,20 +11,20 @@ from torch import optim
 import time
 import os
 
-model_name = 'thenlper/gte-base'
+model_name = 'thenlper/gte-large'
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
 gt = normalise_embeddings_using_train(gt)
 
 device = torch.device("cuda")
 
-batch_size = 128
+batch_size = 200
 
 model = Model(
     model_name=model_name, 
     num_node_features=300, 
-    nout=512, 
-    nhid=512, 
+    nout=1024, 
+    nhid=1024, 
     graph_hidden_channels=512
 )
 

@@ -3,7 +3,7 @@ from torch_geometric.data import DataLoader
 from Model import Model
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.metrics import label_ranking_average_precision_score 
-from utils import prepare_submission, contrastive_loss, normalise_embeddings_using_train
+from utils import prepare_submission, contrastive_loss, normalise_embeddings_using_train, triplet_loss
 import numpy as np
 from transformers import AutoTokenizer
 import torch
@@ -13,7 +13,7 @@ import time
 
 nb_epochs = 20
 batch_size = 75
-learning_rate = 4e-4
+learning_rate = 1e-4
 
 writer = SummaryWriter()
 
@@ -56,10 +56,11 @@ optimizer = optim.AdamW(
     betas=(0.9, 0.999),
     weight_decay=1e-2
 )
-#lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2, factor=0.8, verbose=True)
+#lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 10, gamma=0.77)
+#lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=1, factor=0.8, verbose=True)
 lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
     optimizer, 
-    max_lr=2e-4, 
+    max_lr=learning_rate, 
     steps_per_epoch=len(train_loader), 
     epochs=nb_epochs
 )
@@ -92,8 +93,8 @@ for epoch in range(1, nb_epochs+1):
                 attention_mask.to(device)
             )
             contrast_loss = contrastive_loss(x_graph, x_text)
-        # trip_loss = triplet_loss(x_graph, x_text)
-        current_loss = contrast_loss # + trip_loss
+            #trip_loss = triplet_loss(x_graph, x_text)
+        current_loss = contrast_loss #+ trip_loss
         scaler.scale(current_loss).backward()
         #torch.nn.utils.clip_grad_value_(model.parameters(), 1)
         scaler.step(optimizer)
@@ -141,6 +142,7 @@ for epoch in range(1, nb_epochs+1):
     similarity = cosine_similarity(text_embeddings.cpu(), graph_embeddings.cpu())
     y_true = np.eye(similarity.shape[0])
     val_accuracy = label_ranking_average_precision_score(y_true, similarity)
+    #lr_scheduler.step()
 
     writer.add_scalars("loss", {"test": val_loss}, len(train_loader) * epoch)
     writer.add_scalar("test/score", val_accuracy, len(train_loader) * epoch)

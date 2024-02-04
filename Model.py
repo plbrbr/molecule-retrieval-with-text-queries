@@ -5,54 +5,55 @@ import torch.nn.functional as F
 from torch_geometric.nn import GINConv
 from torch_geometric.nn import global_mean_pool
 from transformers import AutoModel
-
-
-class GraphEncoder(nn.Module):
-    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels, n_gins=3, dropout_rate=0.2):
-        super(GraphEncoder, self).__init__()
+#from GraphEncoderWithGraphNorm import GraphEncoderWithGraphNorm as GraphEncoder
+from GraphEncoderWithAttention import GraphEncoderWithAttention as GraphEncoder
+class GraphEncoderBase(nn.Module):
+    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels, n_gins=4, dropout_rate=0.1, bias=True):
+        super(GraphEncoderBase, self).__init__()
         self.nhid = nhid
         self.nout = nout
         self.dropout_rate = dropout_rate
+        self.activation = nn.SiLU(inplace=True)
         self.gins = nn.ModuleList()
         self.gins.append(
             GINConv(
                 nn.Sequential(
-                    nn.Linear(num_node_features, 2*graph_hidden_channels, bias=False),
-                    nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(),
-                    nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels, bias=False),
-                    nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
+                    nn.Linear(num_node_features, 2*graph_hidden_channels, bias=bias),
+                    nn.BatchNorm1d(2*graph_hidden_channels), self.activation,
+                    nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels, bias=bias),
+                    nn.BatchNorm1d(2*graph_hidden_channels), self.activation, nn.Dropout(dropout_rate),
                     nn.Linear(2*graph_hidden_channels, graph_hidden_channels),
-                    nn.LeakyReLU(), nn.Dropout(dropout_rate),
+                    self.activation, nn.Dropout(dropout_rate),
                 ), train_eps=True)
         )
         for _ in range(n_gins-2):
             self.gins.append(
                 GINConv(
                     nn.Sequential(
-                        nn.Linear(graph_hidden_channels, 2*graph_hidden_channels, bias=False),
-                        nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(),
-                        nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels, bias=False),
-                        nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
+                        nn.Linear(graph_hidden_channels, 2*graph_hidden_channels, bias=bias),
+                        nn.BatchNorm1d(2*graph_hidden_channels), self.activation,
+                        nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels, bias=bias),
+                        nn.BatchNorm1d(2*graph_hidden_channels), self.activation, nn.Dropout(dropout_rate),
                         nn.Linear(2*graph_hidden_channels, graph_hidden_channels),
-                        nn.LeakyReLU(), nn.Dropout(dropout_rate),
+                        self.activation, nn.Dropout(dropout_rate),
                     ), train_eps=True)
             )
         self.gins.append(
             GINConv(
                 nn.Sequential(
-                    nn.Linear(graph_hidden_channels, 2*graph_hidden_channels, bias=False),
-                    nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
-                    nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels, bias=False),
-                    nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
+                    nn.Linear(graph_hidden_channels, 2*graph_hidden_channels, bias=bias),
+                    nn.BatchNorm1d(2*graph_hidden_channels), self.activation, nn.Dropout(dropout_rate),
+                    nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels, bias=bias),
+                    nn.BatchNorm1d(2*graph_hidden_channels), self.activation, nn.Dropout(dropout_rate),
                     nn.Linear(2*graph_hidden_channels, nhid), 
-                    nn.LeakyReLU(), nn.Dropout(dropout_rate),
+                    self.activation, nn.Dropout(dropout_rate),
                 ), train_eps=True)
         )
         self.last_linear = nn.Sequential(
             nn.Linear(nhid, nhid),
-            nn.LeakyReLU(), nn.Dropout(dropout_rate),
+            self.activation, nn.Dropout(dropout_rate),
             nn.Linear(nhid, nhid),
-            nn.LeakyReLU(), nn.Dropout(dropout_rate),
+            self.activation, nn.Dropout(dropout_rate),
             nn.Linear(nhid, nout),
         )
 
@@ -72,13 +73,16 @@ def average_pool(last_hidden_states, attention_mask):
 
 class TextEncoder(nn.Module):
     def __init__(self, model_name, nout, dropout_rate=0.2):
-        self.d_hidden = 1024
+        self.d_hidden = 768
         self.d_out = nout
         super(TextEncoder, self).__init__()
+        self.activation = nn.SiLU(inplace=True)
         self.bert = AutoModel.from_pretrained(model_name)
         self.linear = nn.Sequential(
             nn.Linear(self.d_hidden, self.d_out),
-            nn.LeakyReLU(), nn.Dropout(dropout_rate),
+            self.activation, nn.Dropout(dropout_rate),
+            nn.Linear(self.d_out, self.d_out),
+            self.activation, nn.Dropout(dropout_rate),
             nn.Linear(self.d_out, self.d_out)
         )
         

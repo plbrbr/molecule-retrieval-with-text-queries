@@ -1,30 +1,31 @@
-from dataloader import GraphTextDataset
+from GraphTextDatasetT5 import GraphTextDatasetT5
 from torch_geometric.data import DataLoader
-from Model import Model
+from ModelT5 import Model
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.metrics import label_ranking_average_precision_score 
 from utils import prepare_submission, contrastive_loss, normalise_embeddings_using_train
 import numpy as np
-from transformers import T5Tokenizer, T5ForConditionalGeneration
+from transformers import AutoTokenizer, T5Tokenizer, T5ForConditionalGeneration
 import torch
 from torch.utils.tensorboard import SummaryWriter
 from torch import optim
 import time
 
 nb_epochs = 20
-batch_size = 75
+batch_size = 128
 learning_rate = 4e-4
 
 writer = SummaryWriter()
 
 #model_name = 'bert-base-uncased'
 #model_name = 'allenai/scibert_scivocab_uncased'
-model_name = "QizhiPei/biot5-base-text2mol"
-tokenizer = T5Tokenizer.from_pretrained(model_name, model_max_length=512)
+#model_name = "QizhiPei/biot5-base-text2mol"
+model_name = "laituan245/molt5-small-caption2smiles"
+tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512)
 gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
 gt = normalise_embeddings_using_train(gt)
-val_dataset = GraphTextDataset(root='./data/', gt=gt, split='val', tokenizer=tokenizer)
-train_dataset = GraphTextDataset(root='./data/', gt=gt, split='train', tokenizer=tokenizer)
+val_dataset = GraphTextDatasetT5(root='./data/', gt=gt, split='val', tokenizer=tokenizer)
+train_dataset = GraphTextDatasetT5(root='./data/', gt=gt, split='train', tokenizer=tokenizer)
 
 device = torch.device("cuda")
 
@@ -34,8 +35,8 @@ train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, nu
 model = Model(
     model_name=model_name, 
     num_node_features=300, 
-    nout=1024, # nout = bert model hidden dim
-    nhid=1024, 
+    nout=512, # nout = bert model hidden dim
+    nhid=512, 
     graph_hidden_channels=512
 )
 
@@ -57,12 +58,12 @@ optimizer = optim.AdamW(
     weight_decay=1e-2
 )
 #lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2, factor=0.8, verbose=True)
-lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
-    optimizer, 
-    max_lr=2e-4, 
-    steps_per_epoch=len(train_loader), 
-    epochs=nb_epochs
-)
+#lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
+#    optimizer, 
+#    max_lr=2e-4, 
+#    steps_per_epoch=len(train_loader), 
+#    epochs=nb_epochs
+#)
 
 loss = 0
 losses = []
@@ -98,13 +99,13 @@ for epoch in range(1, nb_epochs+1):
         #torch.nn.utils.clip_grad_value_(model.parameters(), 1)
         scaler.step(optimizer)
         scaler.update()
-        lr_scheduler.step()
+        #lr_scheduler.step()
 
         current_loss = current_loss.item()
         loss += current_loss
 
         writer.add_scalars("loss", {"train": current_loss}, n_iter)
-        writer.add_scalar("train/lr", lr_scheduler.get_last_lr()[0], n_iter)
+        #writer.add_scalar("train/lr", lr_scheduler.get_last_lr()[0], n_iter)
 
         if n_iter % printEvery == 0:
             loss = loss / printEvery

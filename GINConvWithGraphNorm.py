@@ -53,13 +53,14 @@ class GINConvWithGraphNorm(MessagePassing):
         - **output:** node features :math:`(|\mathcal{V}|, F_{out})` or
           :math:`(|\mathcal{V}_t|, F_{out})` if bipartite
     """
-    def __init__(self, mlp_layers: List[Callable], activation: Callable, eps: float = 0., train_eps: bool = False,
+    def __init__(self, mlp_layers: List[Callable], activation: Callable, eps: float = 0., train_eps: bool = False, dropout_rate=0.2,
                  **kwargs):
         kwargs.setdefault('aggr', 'add')
         super().__init__(**kwargs)
-        self.mlp_layers = mlp_layers
+        self.mlp_layers = torch.nn.ModuleList(mlp_layers)
         self.activation = activation
-        self.norms = [GraphNorm() for _ in range(len(mlp_layers))]
+        self.norms = torch.nn.ModuleList([GraphNorm(layer.out_features) for layer in self.mlp_layers[:-1]])
+        self.dropouts = torch.nn.ModuleList([torch.nn.Dropout(dropout_rate) for _ in range(len(self.norms) - 1)])
         self.initial_eps = eps
         if train_eps:
             self.eps = torch.nn.Parameter(torch.empty(1))
@@ -69,8 +70,10 @@ class GINConvWithGraphNorm(MessagePassing):
 
     def reset_parameters(self):
         super().reset_parameters()
-        for layer in self.mlp_layers:
-            reset(layer)
+        reset(self.mlp_layers)
+        reset(self.norms)
+        reset(self.dropouts)
+
         self.eps.data.fill_(self.initial_eps)
 
     def forward(self, x: Union[Tensor, OptPairTensor], edge_index: Adj,
@@ -86,10 +89,13 @@ class GINConvWithGraphNorm(MessagePassing):
         if x_r is not None:
             out = out + (1 + self.eps) * x_r
 
-        for layer, norm in zip(self.mlp_layers, self.norms):
+        for idx, (layer, norm) in enumerate(zip(self.mlp_layers[:-1], self.norms)):
             out = layer(out)
             out = norm(out, batch)
             out = self.activation(out)
+            if idx > 0:
+                out = self.dropouts[idx-1](out)
+        out = self.mlp_layers[-1](out)
         return out
 
     def message(self, x_j: Tensor) -> Tensor:
