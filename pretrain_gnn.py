@@ -2,7 +2,8 @@ from dataloader import PreTrainGraphDataset
 from torch_geometric.data import DataLoader
 #from GraphEncoderWithGraphNorm import GraphEncoderWithGraphNorm as GraphEncoder
 #from GraphEncoderWithAttention import GraphEncoderWithAttention as GraphEncoder
-from ModelT5 import GraphEncoder
+#from GraphEncoderWithAttention import GraphEncoderWithAttention as GraphEncoder
+from ModelT5 import GraphEncoderBase as GraphEncoder
 from utils import loss_cl, normalise_embeddings_using_train
 import numpy as np
 import torch
@@ -22,7 +23,7 @@ train_dataset2 = deepcopy(train_dataset1)
 
 device = torch.device("cuda")
 
-nb_epochs = 500
+nb_epochs = 100
 batch_size = 256
 learning_rate = 1e-3
 
@@ -57,7 +58,7 @@ printEvery = 50
 saveEvery = 50
 
 scaler = torch.cuda.amp.GradScaler()
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 10, gamma=0.9)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 10, gamma=0.8)
 
 for epoch in range(1, nb_epochs+1):
     print(f"-----EPOCH{epoch}-----")

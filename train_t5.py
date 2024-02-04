@@ -1,4 +1,4 @@
-from GraphTextDatasetT5 import GraphTextDatasetT5
+from dataloader import GraphTextDataset
 from torch_geometric.data import DataLoader
 from ModelT5 import Model
 from sklearn.metrics.pairwise import cosine_similarity
@@ -11,8 +11,8 @@ from torch.utils.tensorboard import SummaryWriter
 from torch import optim
 import time
 
-nb_epochs = 20
-batch_size = 128
+nb_epochs = 200
+batch_size = 100
 learning_rate = 4e-4
 
 writer = SummaryWriter()
@@ -20,16 +20,16 @@ writer = SummaryWriter()
 #model_name = 'bert-base-uncased'
 #model_name = 'allenai/scibert_scivocab_uncased'
 #model_name = "QizhiPei/biot5-base-text2mol"
-model_name = "laituan245/molt5-small-caption2smiles"
-tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512)
+model_name = "laituan245/molt5-base-caption2smiles"
+tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=256)
 gt = np.load("./data/token_embedding_dict.npy", allow_pickle=True)[()]
 gt = normalise_embeddings_using_train(gt)
-val_dataset = GraphTextDatasetT5(root='./data/', gt=gt, split='val', tokenizer=tokenizer)
-train_dataset = GraphTextDatasetT5(root='./data/', gt=gt, split='train', tokenizer=tokenizer)
+val_dataset = GraphTextDataset(root='./data/', gt=gt, split='val', tokenizer=tokenizer)
+train_dataset = GraphTextDataset(root='./data/', gt=gt, split='train', tokenizer=tokenizer)
 
 device = torch.device("cuda")
 
-val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
 
 model = Model(
@@ -57,7 +57,7 @@ optimizer = optim.AdamW(
     betas=(0.9, 0.999),
     weight_decay=1e-2
 )
-#lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2, factor=0.8, verbose=True)
+lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2, factor=0.8, verbose=True)
 #lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
 #    optimizer, 
 #    max_lr=2e-4, 
@@ -142,6 +142,7 @@ for epoch in range(1, nb_epochs+1):
     similarity = cosine_similarity(text_embeddings.cpu(), graph_embeddings.cpu())
     y_true = np.eye(similarity.shape[0])
     val_accuracy = label_ranking_average_precision_score(y_true, similarity)
+    lr_scheduler.step(val_accuracy)
 
     writer.add_scalars("loss", {"test": val_loss}, len(train_loader) * epoch)
     writer.add_scalar("test/score", val_accuracy, len(train_loader) * epoch)

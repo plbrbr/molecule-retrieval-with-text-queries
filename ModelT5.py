@@ -3,56 +3,54 @@ from torch import nn
 import torch.nn.functional as F
 
 from torch_geometric.nn import GINConv
-from torch_geometric.nn import global_mean_pool
+from torch_geometric.nn import global_mean_pool, global_max_pool, global_add_pool
 from transformers import AutoModel, T5ForConditionalGeneration
+from GraphEncoderWithAttention import GraphEncoderWithAttention as GraphEncoder
 
-
-class GraphEncoder(nn.Module):
-    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels, n_gins=3, dropout_rate=0.2):
-        super(GraphEncoder, self).__init__()
+class GraphEncoderBase(nn.Module):
+    def __init__(self, num_node_features, nout, nhid, graph_hidden_channels, n_gins=3, dropout_rate=0.1):
+        super(GraphEncoderBase, self).__init__()
         self.nhid = nhid
         self.nout = nout
         self.dropout_rate = dropout_rate
         self.gins = nn.ModuleList()
+        self.activation = nn.SiLU()
         self.gins.append(
             GINConv(
                 nn.Sequential(
-                    nn.Linear(num_node_features, 2*graph_hidden_channels, bias=False),
-                    nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(),
-                    nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels, bias=False),
-                    nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
-                    nn.Linear(2*graph_hidden_channels, graph_hidden_channels),
-                    nn.LeakyReLU(), nn.Dropout(dropout_rate),
-                ), train_eps=True)
+                    nn.Linear(num_node_features, graph_hidden_channels),
+                    nn.BatchNorm1d(graph_hidden_channels), self.activation,
+                    nn.Linear(graph_hidden_channels, graph_hidden_channels),
+                    nn.BatchNorm1d(graph_hidden_channels), self.activation, nn.Dropout(dropout_rate),
+                    nn.Linear(graph_hidden_channels, graph_hidden_channels),
+                ), train_eps=False)
         )
         for _ in range(n_gins-2):
             self.gins.append(
                 GINConv(
                     nn.Sequential(
-                        nn.Linear(graph_hidden_channels, 2*graph_hidden_channels, bias=False),
-                        nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(),
-                        nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels, bias=False),
-                        nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
-                        nn.Linear(2*graph_hidden_channels, graph_hidden_channels),
-                        nn.LeakyReLU(), nn.Dropout(dropout_rate),
-                    ), train_eps=True)
+                        nn.Linear(graph_hidden_channels, graph_hidden_channels),
+                        nn.BatchNorm1d(graph_hidden_channels), self.activation,
+                        nn.Linear(graph_hidden_channels, graph_hidden_channels),
+                        nn.BatchNorm1d(graph_hidden_channels), self.activation, nn.Dropout(dropout_rate),
+                        nn.Linear(graph_hidden_channels, graph_hidden_channels),
+                    ), train_eps=False)
             )
         self.gins.append(
             GINConv(
                 nn.Sequential(
-                    nn.Linear(graph_hidden_channels, 2*graph_hidden_channels, bias=False),
-                    nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
-                    nn.Linear(2*graph_hidden_channels, 2*graph_hidden_channels, bias=False),
-                    nn.BatchNorm1d(2*graph_hidden_channels), nn.LeakyReLU(), nn.Dropout(dropout_rate),
-                    nn.Linear(2*graph_hidden_channels, nhid), 
-                    nn.LeakyReLU(), nn.Dropout(dropout_rate),
-                ), train_eps=True)
+                    nn.Linear(graph_hidden_channels, graph_hidden_channels),
+                    nn.BatchNorm1d(graph_hidden_channels), self.activation, nn.Dropout(dropout_rate),
+                    nn.Linear(graph_hidden_channels, graph_hidden_channels),
+                    nn.BatchNorm1d(graph_hidden_channels), self.activation, nn.Dropout(dropout_rate),
+                    nn.Linear(graph_hidden_channels, graph_hidden_channels), 
+                ), train_eps=False)
         )
         self.last_linear = nn.Sequential(
+            nn.Linear(2*graph_hidden_channels, nhid),
+            self.activation, nn.Dropout(dropout_rate),
             nn.Linear(nhid, nhid),
-            nn.LeakyReLU(), nn.Dropout(dropout_rate),
-            nn.Linear(nhid, nhid),
-            nn.LeakyReLU(), nn.Dropout(dropout_rate),
+            self.activation, nn.Dropout(dropout_rate),
             nn.Linear(nhid, nout),
         )
 
@@ -62,7 +60,7 @@ class GraphEncoder(nn.Module):
         batch = graph_batch.batch
         for gin in self.gins:
             x = gin(x, edge_index)
-        x = global_mean_pool(x, batch)
+        x = torch.cat([global_mean_pool(x, batch), global_max_pool(x, batch)], dim=1)
         x = self.last_linear(x)
         return x
 
@@ -71,14 +69,15 @@ def average_pool(last_hidden_states, attention_mask):
     return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
 
 class TextEncoderT5(nn.Module):
-    def __init__(self, model_name, nout, dropout_rate=0.2):
-        self.d_hidden = 512
+    def __init__(self, model_name, nout, dropout_rate=0.1):
+        self.d_hidden = 768
         self.d_out = nout
         super(TextEncoderT5, self).__init__()
         self.model = T5ForConditionalGeneration.from_pretrained(model_name)
+        self.activation = nn.LeakyReLU()
         self.linear = nn.Sequential(
             nn.Linear(self.d_hidden, self.d_out),
-            nn.LeakyReLU(), nn.Dropout(dropout_rate),
+            self.activation, nn.Dropout(dropout_rate),
             nn.Linear(self.d_out, self.d_out)
         )
         
@@ -92,7 +91,7 @@ class TextEncoderT5(nn.Module):
 class Model(nn.Module):
     def __init__(self, model_name, num_node_features, nout, nhid, graph_hidden_channels):
         super(Model, self).__init__()
-        self.graph_encoder = GraphEncoder(num_node_features, nout, nhid, graph_hidden_channels)
+        self.graph_encoder = GraphEncoderBase(num_node_features, nout, nhid, graph_hidden_channels)
         self.text_encoder = TextEncoderT5(model_name, nout)
         
     def forward(self, graph_batch, input_ids, attention_mask):

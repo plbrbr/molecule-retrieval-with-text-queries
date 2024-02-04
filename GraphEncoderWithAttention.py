@@ -12,25 +12,17 @@ class GraphEncoderWithAttention(nn.Module):
         self.nhid = nhid
         self.nout = nout
         self.dropout_rate = dropout_rate
-        self.activation = nn.LeakyReLU()
+        self.activation = nn.SiLU()
 
         self.gcn1 = GATv2Conv(num_node_features, graph_hidden_channels // 2)
-        self.gcn2 = GINConv(
-                nn.Sequential(
-                    nn.Linear(graph_hidden_channels // 2, graph_hidden_channels // 2),
-                    nn.BatchNorm1d(graph_hidden_channels // 2), self.activation,
-                    nn.Linear(graph_hidden_channels // 2, graph_hidden_channels // 2),
-                    nn.BatchNorm1d(graph_hidden_channels // 2), self.activation,
-                    nn.Linear(graph_hidden_channels // 2, graph_hidden_channels // 2),
-                ), train_eps=True)
-        #self.gcn2 = GATv2Conv(graph_hidden_channels // 2, graph_hidden_channels // 2)
+        self.gcn2 = GATv2Conv(graph_hidden_channels // 2, graph_hidden_channels // 2)
         #self.gcn3 = GATv2Conv(graph_hidden_channels // 2, graph_hidden_channels // 2)
         #self.pool1 = TopKPooling(graph_hidden_channels // 2, ratio=0.8)
         #self.pool2 = TopKPooling(graph_hidden_channels // 2, ratio=0.8)
         #self.pool3 = TopKPooling(graph_hidden_channels // 2, ratio=0.8)
         self.dropout1 = nn.Dropout(dropout_rate)
         self.dropout2 = nn.Dropout(dropout_rate)
-        self.dropout3 = nn.Dropout(dropout_rate)
+        #self.dropout3 = nn.Dropout(dropout_rate)
 
         self.last_linear = nn.Sequential(
             nn.Linear(graph_hidden_channels, nhid),
@@ -49,18 +41,18 @@ class GraphEncoderWithAttention(nn.Module):
         x = self.activation(self.gcn1(x, edge_index)) 
         x = self.dropout1(x)
         #x, edge_index, edge_attr, batch, perm, score = self.pool1(x, batch)
-        x1 = torch.cat([global_mean_pool(x, batch), global_max_pool(x, batch)], dim=1)
+        #x1 = torch.cat([global_mean_pool(x, batch), global_max_pool(x, batch)], dim=1)
 
         x = self.activation(self.gcn2(x, edge_index))
         x = self.dropout2(x)
         #x, edge_index, edge_attr, batch, perm, score = self.pool2(x, batch)
-        x2 = torch.cat([global_mean_pool(x, batch), global_max_pool(x, batch)], dim=1)
+        x = torch.cat([global_mean_pool(x, batch), global_max_pool(x, batch)], dim=1)
         
         #x = self.activation(self.gcn3(x, edge_index))
         #x = self.dropout3(x)
         #x, edge_index, edge_attr, batch, perm, score = self.pool3(x, batch)
         #x3 = torch.cat([global_mean_pool(x, batch), global_max_pool(x, batch)], dim=1)
-        x = x1 + x2 #+ x3
+        #x = x1 + x2 #+ x3
 
         #x, edge_index, edge_attr, batch, perm, score = self.pool1(x, batch)
         x = self.last_linear(x)
